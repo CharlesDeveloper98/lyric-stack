@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LyricStack - Liquid Glass iOS</title>
+    <title>LyricSpot - Liquid Glass iOS</title>
     <link rel="stylesheet" href="style.css">
-    <!-- MusicKit JS CDN for Apple Music Integration -->
+    <!-- MusicKit JS CDN -->
     <script src="https://js-cdn.music.apple.com/musickit/v1/musickit.js"></script>
 </head>
 <body>
-    <!-- Dynamic Mesh Background Elements -->
     <div class="mesh-bg">
         <div class="blob blob-1"></div>
         <div class="blob blob-2"></div>
@@ -17,25 +16,24 @@
     </div>
 
     <main class="app-container">
-        <!-- Header Section -->
         <header class="app-header">
             <div class="header-badge">
-                <span class="pulse-dot"></span> iOS 26 Glass Engine
+                <span class="pulse-dot"></span> iOS Liquid Glass Engine
             </div>
             <h1>LyricSpot</h1>
             <button id="auth-btn" class="glass-button">Connect Apple Music</button>
         </header>
 
-        <!-- Now Playing Card (Interactive Liquid Glass) -->
+        <!-- Now Playing Card -->
         <section id="now-playing-card" class="glass-card interactive">
             <div class="card-glow"></div>
             <div class="album-art-wrapper">
                 <img id="track-art" src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&auto=format&fit=crop&q=60" alt="Album Art">
             </div>
             <div class="track-info">
-                <span class="subtitle" id="connection-status">Tap card to fetch live lyrics</span>
+                <span class="subtitle" id="connection-status">Detecting device audio...</span>
                 <h2 id="track-title">No Song Playing</h2>
-                <p id="track-artist">Connect your account or play music</p>
+                <p id="track-artist">Play music on your device</p>
             </div>
             <div class="action-indicator">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
@@ -49,7 +47,7 @@
                 <button id="close-lyrics" class="icon-btn">&times;</button>
             </div>
             <div id="lyrics-content" class="lyrics-body">
-                <p class="placeholder-text">Select the Now Playing card to query lyrics database...</p>
+                <p class="placeholder-text">Tap the Now Playing card to query lyrics...</p>
             </div>
         </section>
     </main>
