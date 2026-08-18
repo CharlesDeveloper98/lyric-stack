@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LyricStack - Liquid Glass iOS</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- MusicKit JS CDN for Apple Music Integration -->
+    <script src="https://js-cdn.music.apple.com/musickit/v1/musickit.js"></script>
+</head>
+<body>
+    <!-- Dynamic Mesh Background Elements -->
+    <div class="mesh-bg">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <main class="app-container">
+        <!-- Header Section -->
+        <header class="app-header">
+            <div class="header-badge">
+                <span class="pulse-dot"></span> iOS 26 Glass Engine
+            </div>
+            <h1>LyricSpot</h1>
+            <button id="auth-btn" class="glass-button">Connect Apple Music</button>
+        </header>
+
+        <!-- Now Playing Card (Interactive Liquid Glass) -->
+        <section id="now-playing-card" class="glass-card interactive">
+            <div class="card-glow"></div>
+            <div class="album-art-wrapper">
+                <img id="track-art" src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&auto=format&fit=crop&q=60" alt="Album Art">
+            </div>
+            <div class="track-info">
+                <span class="subtitle" id="connection-status">Tap card to fetch live lyrics</span>
+                <h2 id="track-title">No Song Playing</h2>
+                <p id="track-artist">Connect your account or play music</p>
+            </div>
+            <div class="action-indicator">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+            </div>
+        </section>
+
+        <!-- Lyrics Display View -->
+        <section id="lyrics-section" class="glass-card lyrics-card hidden">
+            <div class="lyrics-header">
+                <h3 id="lyrics-title">Synchronized Lyrics</h3>
+                <button id="close-lyrics" class="icon-btn">&times;</button>
+            </div>
+            <div id="lyrics-content" class="lyrics-body">
+                <p class="placeholder-text">Select the Now Playing card to query lyrics database...</p>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
