@@ -28,7 +28,6 @@ body {
     position: relative;
 }
 
-/* Liquid Glass Mesh Background */
 .mesh-bg {
     position: absolute;
     width: 100vw;
@@ -46,38 +45,15 @@ body {
     animation: floatBlob 20s infinite alternate cubic-bezier(0.37, 0, 0.63, 1);
 }
 
-.blob-1 {
-    width: 450px;
-    height: 450px;
-    background: #ff2d55;
-    top: -10%;
-    left: -10%;
-}
-
-.blob-2 {
-    width: 500px;
-    height: 500px;
-    background: #5856d6;
-    bottom: -15%;
-    right: -10%;
-    animation-delay: -5s;
-}
-
-.blob-3 {
-    width: 350px;
-    height: 350px;
-    background: #007aff;
-    top: 40%;
-    left: 30%;
-    animation-delay: -10s;
-}
+.blob-1 { width: 450px; height: 450px; background: #ff2d55; top: -10%; left: -10%; }
+.blob-2 { width: 500px; height: 500px; background: #5856d6; bottom: -15%; right: -10%; animation-delay: -5s; }
+.blob-3 { width: 350px; height: 350px; background: #007aff; top: 40%; left: 30%; animation-delay: -10s; }
 
 @keyframes floatBlob {
     0% { transform: translate(0, 0) scale(1); }
     100% { transform: translate(50px, 80px) scale(1.15); }
 }
 
-/* Layout container */
 .app-container {
     width: 100%;
     max-width: 440px;
@@ -88,7 +64,6 @@ body {
     z-index: 1;
 }
 
-/* Header */
 .app-header {
     text-align: center;
     display: flex;
@@ -125,7 +100,6 @@ body {
     letter-spacing: -0.5px;
 }
 
-/* Liquid Glass Cards */
 .glass-card {
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
@@ -162,7 +136,6 @@ body {
     transform: scale(0.98);
 }
 
-/* Album Art Styling */
 .album-art-wrapper {
     width: 64px;
     height: 64px;
@@ -178,7 +151,6 @@ body {
     object-fit: cover;
 }
 
-/* Track Info */
 .track-info {
     flex-grow: 1;
     min-width: 0;
@@ -216,7 +188,6 @@ body {
     opacity: 0.6;
 }
 
-/* Buttons */
 .glass-button {
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
@@ -235,7 +206,6 @@ body {
     border-color: var(--glass-highlight);
 }
 
-/* Lyrics Section Panel */
 .lyrics-card {
     display: flex;
     flex-direction: column;
@@ -271,9 +241,7 @@ body {
     transition: opacity 0.2s;
 }
 
-.icon-btn:hover {
-    opacity: 1;
-}
+.icon-btn:hover { opacity: 1; }
 
 .lyrics-body {
     overflow-y: auto;
@@ -282,13 +250,6 @@ body {
     color: var(--text-secondary);
     padding-right: 4px;
     max-height: 320px;
-}
-
-.lyrics-body p.active-line {
-    color: var(--text-primary);
-    font-weight: 600;
-    transform: scale(1.02);
-    transition: transform 0.2s;
 }
 
 .placeholder-text {
