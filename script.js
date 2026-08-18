@@ -1,132 +1,132 @@
-const APPLE_MUSIC_DEVELOPER_TOKEN = "YOUR_APPLE_MUSIC_DEVELOPER_TOKEN_HERE"; 
-
-let music = null;
-const authBtn = document.getElementById('auth-btn');
-const nowPlayingCard = document.getElementById('now-playing-card');
-const trackTitleEl = document.getElementById('track-title');
-const trackArtistEl = document.getElementById('track-artist');
-const trackArtEl = document.getElementById('track-art');
-const connectionStatusEl = document.getElementById('connection-status');
+const searchInput = document.getElementById('search-input');
+const clearBtn = document.getElementById('clear-btn');
+const resultsSection = document.getElementById('results-section');
+const resultsContent = document.getElementById('results-content');
+const closeResultsBtn = document.getElementById('close-results');
 const lyricsSection = document.getElementById('lyrics-section');
 const lyricsContent = document.getElementById('lyrics-content');
 const lyricsTitle = document.getElementById('lyrics-title');
+const lyricsArtistTag = document.getElementById('lyrics-artist-tag');
 const closeLyricsBtn = document.getElementById('close-lyrics');
 
-// 1. Initialize MusicKit JS & Device Session Handlers
-document.addEventListener('musickitloaded', async () => {
+let searchTimeout = null;
+
+// Handle Search Input Dynamics
+searchInput.addEventListener('input', (e) => {
+    const query = e.target.value.trim();
+    if (query.length > 0) {
+        clearBtn.classList.remove('hidden');
+    } else {
+        clearBtn.classList.add('hidden');
+        resultsSection.classList.add('hidden');
+        return;
+    }
+
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        performMusicSearch(query);
+    }, 400); // Debounce lookup
+});
+
+clearBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    clearBtn.classList.add('hidden');
+    resultsSection.classList.add('hidden');
+    lyricsSection.classList.add('hidden');
+    searchInput.focus();
+});
+
+closeResultsBtn.addEventListener('click', () => {
+    resultsSection.classList.add('hidden');
+});
+
+closeLyricsBtn.addEventListener('click', () => {
+    lyricsSection.classList.add('hidden');
+});
+
+// 1. Search Music Catalog via Public API (iTunes Search API ecosystem for 100% active endpoints)
+async function performMusicSearch(query) {
+    resultsSection.classList.remove('hidden');
+    resultsContent.innerHTML = `<p class="placeholder-text">Searching Apple Music catalog...</p>`;
+
     try {
-        await MusicKit.configure({
-            developerToken: APPLE_MUSIC_DEVELOPER_TOKEN,
-            app: { name: 'LyricSpot', build: '26.1.0' }
-        });
-        music = MusicKit.getInstance();
-        if (music.isAuthorized) {
-            updateAuthUI(true);
-            syncAppleMusicPlayback();
-        }
-    } catch (error) {
-        console.error("MusicKit configuration failed:", error);
-    }
-});
+        const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=8`);
+        const data = await response.json();
 
-// 2. Real-time Device Audio Reader via Media Session API & MusicKit
-function pollDeviceAudio() {
-    // If browser supports Media Session metadata reading from system output
-    if ('mediaSession' in navigator && navigator.mediaSession.metadata) {
-        const meta = navigator.mediaSession.metadata;
-        trackTitleEl.textContent = meta.title || "Active Device Audio";
-        trackArtistEl.textContent = meta.artist || "Unknown Artist";
-        connectionStatusEl.textContent = "Live System Audio Synced";
+        if (data.results && data.results.length > 0) {
+            renderSongList(data.results);
+        } else {
+            resultsContent.innerHTML = `<p class="placeholder-text">No tracks found matching "${query}"</p>`;
+        }
+    } catch (err) {
+        resultsContent.innerHTML = `<p class="placeholder-text">Network error. Please check connection.</p>`;
+    }
+}
+
+// 2. Render Search Results List inside Glass Card
+function renderSongList(tracks) {
+    resultsContent.innerHTML = '';
+    tracks.forEach(track => {
+        const item = document.createElement('div');
+        item.className = 'song-item';
         
-        if (meta.artwork && meta.artwork.length > 0) {
-            trackArtEl.src = meta.artwork[meta.artwork.length - 1].src;
-        }
-    }
+        const artworkUrl = track.artworkUrl100 ? track.artworkUrl100.replace('100x100bb', '200x200bb') : 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=200';
 
-    // If Apple Music is actively playing
-    if (music && music.isAuthorized && music.nowPlayingItem) {
-        const item = music.nowPlayingItem;
-        trackTitleEl.textContent = item.title;
-        trackArtistEl.textContent = item.artistName;
-        if (item.artwork && item.artwork.url) {
-            trackArtEl.src = item.artwork.url.replace('{w}', '300').replace('{h}', '300');
-        }
-        connectionStatusEl.textContent = "Apple Music Synced";
-    }
+        item.innerHTML = `
+            <img src="${artworkUrl}" class="song-thumb" alt="Art">
+            <div class="song-meta">
+                <h4>${escapeHTML(track.trackName)}</h4>
+                <p>${escapeHTML(track.artistName)}</p>
+            </div>
+        `;
+
+        // When a song from the list is clicked, fetch and show lyrics
+        item.addEventListener('click', () => {
+            fetchLyrics(track.artistName, track.trackName);
+        });
+
+        resultsContent.appendChild(item);
+    });
 }
 
-setInterval(pollDeviceAudio, 1500);
-
-authBtn.addEventListener('click', async () => {
-    if (!music) {
-        alert("MusicKit initializing. Try again shortly.");
-        return;
-    }
-    if (!music.isAuthorized) {
-        try {
-            await music.authorize();
-            updateAuthUI(true);
-        } catch (err) {
-            console.error("Auth error:", err);
-        }
-    } else {
-        await music.unauthorize();
-        updateAuthUI(false);
-    }
-});
-
-function updateAuthUI(isAuthed) {
-    if (isAuthed) {
-        authBtn.textContent = "Disconnect";
-        connectionStatusEl.textContent = "Apple Music Connected";
-    } else {
-        authBtn.textContent = "Connect Apple Music";
-        connectionStatusEl.textContent = "Detecting device audio...";
-    }
-}
-
-// 3. Tap card to fetch lyrics instantly
-nowPlayingCard.addEventListener('click', async () => {
-    const title = trackTitleEl.textContent;
-    const artist = trackArtistEl.textContent;
-
-    if (title === "No Song Playing" || title === "Active Device Audio") {
-        alert("Play a song on your device first!");
-        return;
-    }
-
+// 3. Fetch Synchronized/Standard Lyrics via Secure Repositories
+async function fetchLyrics(artist, title) {
+    resultsSection.classList.add('hidden');
     lyricsSection.classList.remove('hidden');
-    lyricsTitle.textContent = `${title} — Lyrics`;
-    lyricsContent.innerHTML = `<p class="placeholder-text">Searching lyrics database for "${title}"...</p>`;
+    lyricsTitle.textContent = title;
+    lyricsArtistTag.textContent = artist;
+    lyricsContent.innerHTML = `<p class="placeholder-text">Fetching lyrics for "${title}"...</p>`;
 
     try {
         const response = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
         const data = await response.json();
 
         if (data.lyrics) {
-            lyricsContent.innerHTML = `<p>${data.lyrics.replace(/\n/g, '<br>')}</p>`;
+            lyricsContent.textContent = data.lyrics;
         } else {
-            fetchFallbackLyrics(artist, title);
+            fetchSecondaryLyricsSource(artist, title);
         }
     } catch (e) {
-        fetchFallbackLyrics(artist, title);
-    }
-});
-
-async function fetchFallbackLyrics(artist, title) {
-    try {
-        const altResponse = await fetch(`https://some-random-api.com/others/lyrics?title=${encodeURIComponent(title)}`);
-        const altData = await altResponse.json();
-        if (altData && altData.lyrics) {
-            lyricsContent.innerHTML = `<p>${altData.lyrics.replace(/\n/g, '<br>')}</p>`;
-        } else {
-            lyricsContent.innerHTML = `<p class="placeholder-text">Lyrics unavailable for: <b>${title}</b></p>`;
-        }
-    } catch (err) {
-        lyricsContent.innerHTML = `<p class="placeholder-text">Could not load lyrics securely.</p>`;
+        fetchSecondaryLyricsSource(artist, title);
     }
 }
 
-closeLyricsBtn.addEventListener('click', () => {
-    lyricsSection.classList.add('hidden');
-});
+async function fetchSecondaryLyricsSource(artist, title) {
+    try {
+        const res = await fetch(`https://some-random-api.com/others/lyrics?title=${encodeURIComponent(title)}`);
+        const data = await res.json();
+        if (data && data.lyrics) {
+            lyricsContent.textContent = data.lyrics;
+        } else {
+            lyricsContent.innerHTML = `<p class="placeholder-text">Instrumental or lyrics unavailable for <b>${title}</b>.</p>`;
+        }
+    } catch (err) {
+        lyricsContent.innerHTML = `<p class="placeholder-text">Could not load lyrics for this track selection.</p>`;
+    }
+}
+
+function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+    );
+}
