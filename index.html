@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LyricSpot - Liquid Glass iOS</title>
+    <title>LyricSpot - Apple Music Liquid Glass</title>
     <link rel="stylesheet" href="style.css">
-    <!-- MusicKit JS CDN -->
-    <script src="https://js-cdn.music.apple.com/musickit/v1/musickit.js"></script>
 </head>
 <body>
+    <!-- Dynamic Mesh Background (Liquid Glass Accents) -->
     <div class="mesh-bg">
         <div class="blob blob-1"></div>
         <div class="blob blob-2"></div>
@@ -16,38 +15,46 @@
     </div>
 
     <main class="app-container">
+        <!-- Header -->
         <header class="app-header">
             <div class="header-badge">
-                <span class="pulse-dot"></span> iOS Liquid Glass Engine
+                <span class="pulse-dot"></span> Apple Music Glass UI
             </div>
             <h1>LyricSpot</h1>
-            <button id="auth-btn" class="glass-button">Connect Apple Music</button>
+            <p class="subtitle-header">Search any track to instantly explore lyrics</p>
         </header>
 
-        <!-- Now Playing Card -->
-        <section id="now-playing-card" class="glass-card interactive">
-            <div class="card-glow"></div>
-            <div class="album-art-wrapper">
-                <img id="track-art" src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&auto=format&fit=crop&q=60" alt="Album Art">
-            </div>
-            <div class="track-info">
-                <span class="subtitle" id="connection-status">Detecting device audio...</span>
-                <h2 id="track-title">No Song Playing</h2>
-                <p id="track-artist">Play music on your device</p>
-            </div>
-            <div class="action-indicator">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+        <!-- Liquid Glass Search Bar -->
+        <section class="search-section">
+            <div class="glass-search-box">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                <input type="text" id="search-input" placeholder="Search song title or artist..." autocomplete="off">
+                <button id="clear-btn" class="clear-btn hidden">&times;</button>
             </div>
         </section>
 
-        <!-- Lyrics Display View -->
+        <!-- Dynamic Results / State Container -->
+        <section id="results-section" class="glass-card results-card hidden">
+            <div class="results-header">
+                <h3 id="results-title">Search Results</h3>
+                <button id="close-results" class="icon-btn">&times;</button>
+            </div>
+            <div id="results-content" class="results-body">
+                <!-- Populated dynamically -->
+            </div>
+        </section>
+
+        <!-- Lyrics Modal / View Panel -->
         <section id="lyrics-section" class="glass-card lyrics-card hidden">
             <div class="lyrics-header">
-                <h3 id="lyrics-title">Synchronized Lyrics</h3>
+                <div>
+                    <span id="lyrics-artist-tag" class="artist-tag">Artist</span>
+                    <h3 id="lyrics-title">Song Title</h3>
+                </div>
                 <button id="close-lyrics" class="icon-btn">&times;</button>
             </div>
             <div id="lyrics-content" class="lyrics-body">
-                <p class="placeholder-text">Tap the Now Playing card to query lyrics...</p>
+                <p class="placeholder-text">Loading lyrics vector...</p>
             </div>
         </section>
     </main>
