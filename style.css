@@ -1,0 +1,298 @@
+:root {
+    --bg-color: #0b0b0f;
+    --text-primary: rgba(255, 255, 255, 0.92);
+    --text-secondary: rgba(255, 255, 255, 0.55);
+    --glass-bg: rgba(255, 255, 255, 0.06);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --glass-highlight: rgba(255, 255, 255, 0.25);
+    --card-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-family);
+    -webkit-font-smoothing: antialiased;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* Liquid Glass Mesh Background */
+.mesh-bg {
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    z-index: -1;
+    filter: blur(80px);
+    opacity: 0.6;
+}
+
+.blob {
+    position: absolute;
+    border-radius: 50%;
+    will-change: transform;
+    animation: floatBlob 20s infinite alternate cubic-bezier(0.37, 0, 0.63, 1);
+}
+
+.blob-1 {
+    width: 450px;
+    height: 450px;
+    background: #ff2d55;
+    top: -10%;
+    left: -10%;
+}
+
+.blob-2 {
+    width: 500px;
+    height: 500px;
+    background: #5856d6;
+    bottom: -15%;
+    right: -10%;
+    animation-delay: -5s;
+}
+
+.blob-3 {
+    width: 350px;
+    height: 350px;
+    background: #007aff;
+    top: 40%;
+    left: 30%;
+    animation-delay: -10s;
+}
+
+@keyframes floatBlob {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(50px, 80px) scale(1.15); }
+}
+
+/* Layout container */
+.app-container {
+    width: 100%;
+    max-width: 440px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    z-index: 1;
+}
+
+/* Header */
+.app-header {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    backdrop-filter: blur(20px);
+}
+
+.pulse-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #30d158;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #30d158;
+}
+
+.app-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+/* Liquid Glass Cards */
+.glass-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(40px) saturate(200%);
+    -webkit-backdrop-filter: blur(40px) saturate(200%);
+    border-radius: 28px;
+    box-shadow: var(--card-shadow);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.3s;
+}
+
+.glass-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--glass-highlight), transparent);
+}
+
+.glass-card.interactive {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.glass-card.interactive:hover {
+    transform: scale(1.02);
+    border-color: var(--glass-highlight);
+}
+
+.glass-card.interactive:active {
+    transform: scale(0.98);
+}
+
+/* Album Art Styling */
+.album-art-wrapper {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+}
+
+.album-art-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Track Info */
+.track-info {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.track-info .subtitle {
+    font-size: 11px;
+    font-weight: 600;
+    color: #ff2d55;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.track-info h2 {
+    font-size: 17px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+
+.track-info p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.action-indicator {
+    color: var(--text-secondary);
+    opacity: 0.6;
+}
+
+/* Buttons */
+.glass-button {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    padding: 8px 16px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.glass-button:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: var(--glass-highlight);
+}
+
+/* Lyrics Section Panel */
+.lyrics-card {
+    display: flex;
+    flex-direction: column;
+    max-height: 420px;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lyrics-card.hidden {
+    display: none;
+}
+
+.lyrics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 10px;
+}
+
+.lyrics-header h3 {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 22px;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.icon-btn:hover {
+    opacity: 1;
+}
+
+.lyrics-body {
+    overflow-y: auto;
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    padding-right: 4px;
+    max-height: 320px;
+}
+
+.lyrics-body p.active-line {
+    color: var(--text-primary);
+    font-weight: 600;
+    transform: scale(1.02);
+    transition: transform 0.2s;
+}
+
+.placeholder-text {
+    text-align: center;
+    padding: 40px 0;
+    font-style: italic;
+}
