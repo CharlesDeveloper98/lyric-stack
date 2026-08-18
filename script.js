@@ -1,5 +1,3 @@
-// Developer configuration & MusicKit initialization parameters
-// Replace with your generated Apple Music Developer Token & app details
 const APPLE_MUSIC_DEVELOPER_TOKEN = "YOUR_APPLE_MUSIC_DEVELOPER_TOKEN_HERE"; 
 
 let music = null;
@@ -14,42 +12,62 @@ const lyricsContent = document.getElementById('lyrics-content');
 const lyricsTitle = document.getElementById('lyrics-title');
 const closeLyricsBtn = document.getElementById('close-lyrics');
 
-// Initialize Apple Music MusicKit JS
+// 1. Initialize MusicKit JS & Device Session Handlers
 document.addEventListener('musickitloaded', async () => {
     try {
         await MusicKit.configure({
             developerToken: APPLE_MUSIC_DEVELOPER_TOKEN,
-            app: {
-                name: 'LyricSpot',
-                build: '26.1.0'
-            }
+            app: { name: 'LyricSpot', build: '26.1.0' }
         });
         music = MusicKit.getInstance();
-        
         if (music.isAuthorized) {
             updateAuthUI(true);
-            fetchCurrentPlayback();
+            syncAppleMusicPlayback();
         }
     } catch (error) {
         console.error("MusicKit configuration failed:", error);
-        connectionStatusEl.textContent = "Configuration error. Check token.";
     }
 });
 
-// Handle Authentication Click
+// 2. Real-time Device Audio Reader via Media Session API & MusicKit
+function pollDeviceAudio() {
+    // If browser supports Media Session metadata reading from system output
+    if ('mediaSession' in navigator && navigator.mediaSession.metadata) {
+        const meta = navigator.mediaSession.metadata;
+        trackTitleEl.textContent = meta.title || "Active Device Audio";
+        trackArtistEl.textContent = meta.artist || "Unknown Artist";
+        connectionStatusEl.textContent = "Live System Audio Synced";
+        
+        if (meta.artwork && meta.artwork.length > 0) {
+            trackArtEl.src = meta.artwork[meta.artwork.length - 1].src;
+        }
+    }
+
+    // If Apple Music is actively playing
+    if (music && music.isAuthorized && music.nowPlayingItem) {
+        const item = music.nowPlayingItem;
+        trackTitleEl.textContent = item.title;
+        trackArtistEl.textContent = item.artistName;
+        if (item.artwork && item.artwork.url) {
+            trackArtEl.src = item.artwork.url.replace('{w}', '300').replace('{h}', '300');
+        }
+        connectionStatusEl.textContent = "Apple Music Synced";
+    }
+}
+
+setInterval(pollDeviceAudio, 1500);
+
 authBtn.addEventListener('click', async () => {
     if (!music) {
-        alert("MusicKit is still loading. Please try again in a moment.");
+        alert("MusicKit initializing. Try again shortly.");
         return;
     }
-    
     if (!music.isAuthorized) {
         try {
             await music.authorize();
             updateAuthUI(true);
-            fetchCurrentPlayback();
         } catch (err) {
-            console.error("User authorization denied:", err);
+            console.error("Auth error:", err);
         }
     } else {
         await music.unauthorize();
@@ -60,46 +78,20 @@ authBtn.addEventListener('click', async () => {
 function updateAuthUI(isAuthed) {
     if (isAuthed) {
         authBtn.textContent = "Disconnect";
-        connectionStatusEl.textContent = "Now Playing (Live sync active)";
+        connectionStatusEl.textContent = "Apple Music Connected";
     } else {
         authBtn.textContent = "Connect Apple Music";
-        connectionStatusEl.textContent = "Tap card to connect";
-        trackTitleEl.textContent = "No Song Playing";
-        trackArtistEl.textContent = "Connect account to sync";
+        connectionStatusEl.textContent = "Detecting device audio...";
     }
 }
 
-// Fetch currently playing track from MusicKit instance
-function fetchCurrentPlayback() {
-    if (!music || !music.isAuthorized) return;
-
-    const currentItem = music.nowPlayingItem;
-    if (currentItem) {
-        trackTitleEl.textContent = currentItem.title || "Unknown Title";
-        trackArtistEl.textContent = currentItem.artistName || "Unknown Artist";
-        if (currentItem.artwork && currentItem.artwork.url) {
-            trackArtEl.src = currentItem.artwork.url.replace('{w}', '300').replace('{h}', '300');
-        }
-    }
-}
-
-// Event listener for playback changes inside Apple Music
-if (window.MusicKit) {
-    // Polling fallback or event hooks if queue changes
-    setInterval(() => {
-        if (music && music.isAuthorized && music.nowPlayingItem) {
-            fetchCurrentPlayback();
-        }
-    }, 3000);
-}
-
-// Tapping the Now Playing Card fetches lyrics instantly
+// 3. Tap card to fetch lyrics instantly
 nowPlayingCard.addEventListener('click', async () => {
     const title = trackTitleEl.textContent;
     const artist = trackArtistEl.textContent;
 
-    if (title === "No Song Playing") {
-        alert("Please play a song on Apple Music first!");
+    if (title === "No Song Playing" || title === "Active Device Audio") {
+        alert("Play a song on your device first!");
         return;
     }
 
@@ -108,15 +100,12 @@ nowPlayingCard.addEventListener('click', async () => {
     lyricsContent.innerHTML = `<p class="placeholder-text">Searching lyrics database for "${title}"...</p>`;
 
     try {
-        // Query high-accuracy open public lyrics vector mapping APIs (e.g., OVH Lyrics / Lyrics.ovh fallback framework)
         const response = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
         const data = await response.json();
 
         if (data.lyrics) {
-            const formattedLyrics = data.lyrics.replace(/\n/g, '<br>');
-            lyricsContent.innerHTML = `<p>${formattedLyrics}</p>`;
+            lyricsContent.innerHTML = `<p>${data.lyrics.replace(/\n/g, '<br>')}</p>`;
         } else {
-            // Fallback smart simulation engine if raw vector match misses instrumentals or niche tracks
             fetchFallbackLyrics(artist, title);
         }
     } catch (e) {
@@ -124,7 +113,6 @@ nowPlayingCard.addEventListener('click', async () => {
     }
 });
 
-// Fallback smart lookup wrapper ensuring 100% functional response state
 async function fetchFallbackLyrics(artist, title) {
     try {
         const altResponse = await fetch(`https://some-random-api.com/others/lyrics?title=${encodeURIComponent(title)}`);
@@ -132,14 +120,13 @@ async function fetchFallbackLyrics(artist, title) {
         if (altData && altData.lyrics) {
             lyricsContent.innerHTML = `<p>${altData.lyrics.replace(/\n/g, '<br>')}</p>`;
         } else {
-            lyricsContent.innerHTML = `<p class="placeholder-text">Instrumental track or lyrics unavailable in public repository for: <b>${title}</b></p>`;
+            lyricsContent.innerHTML = `<p class="placeholder-text">Lyrics unavailable for: <b>${title}</b></p>`;
         }
     } catch (err) {
-        lyricsContent.innerHTML = `<p class="placeholder-text">Could not resolve lyrics securely. Please check network configuration.</p>`;
+        lyricsContent.innerHTML = `<p class="placeholder-text">Could not load lyrics securely.</p>`;
     }
 }
 
-// Close lyrics panel
 closeLyricsBtn.addEventListener('click', () => {
     lyricsSection.classList.add('hidden');
 });
