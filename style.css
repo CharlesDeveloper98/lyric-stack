@@ -216,15 +216,108 @@ body {
 
 
 
-Lyrics Panels */
+/* --- Redesigned Lyrics Header & Liquid Glass Buttons --- */
 .lyrics-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
     border-bottom: 1px solid var(--glass-border);
-    padding-bottom: 10px;
+    padding-bottom: 12px;
+    gap: 12px;
 }
+
+.lyrics-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.lyrics-titles-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.lyrics-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+/* Liquid Glass Back Chevron Container Button */
+.liquid-back-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-primary);
+    flex-shrink: 0;
+    transition: transform 0.25s var(--ios-spring), background 0.25s ease;
+}
+
+.liquid-back-btn:active {
+    transform: scale(0.9);
+}
+
+.chevron-icon {
+    filter: var(--icon-filter);
+    opacity: 0.9;
+}
+
+/* Liquid Glass "See full lyrics..." Action Pill Container */
+.liquid-action-pill {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 8px 14px;
+    border-radius: 18px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    white-space: nowrap;
+    transition: transform 0.25s var(--ios-spring), background 0.25s ease;
+}
+
+.liquid-action-pill:active {
+    transform: scale(0.95);
+}
+
+.liquid-action-pill:hover {
+    background: var(--active-pill-bg);
+}
+
+/* Butter-Smooth Hardware Accelerated Scrolling for Lyrics Body */
+.lyrics-body {
+    max-height: 320px;
+    overflow-y: auto;
+    padding-right: 6px;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    white-space: pre-line;
+    
+    /* Performance properties to make scrolling silky smooth without jitter */
+    -webkit-overflow-scrolling: touch;
+    will-change: scroll-position;
+    transform: translateZ(0);
+}
+
+
 
 .results-header h3, .lyrics-header h3 { font-size: 16px; font-weight: 600; }
 .artist-tag { font-size: 11px; color: #fa233b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; display: block; }
@@ -261,12 +354,6 @@ Lyrics Panels */
     padding-right: 4px;
 }
 
-.lyrics-body {
-    font-size: 15px;
-    line-height: 1.7;
-    color: var(--text-secondary);
-    white-space: pre-line;
-}
 
 /* Individual Song Row inside the unified Card */
 .song-item {
