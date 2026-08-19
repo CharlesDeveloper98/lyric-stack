@@ -61,85 +61,42 @@
                 </section>
             </div>
 
-                       <!-- Settings View -->
-<div id="settings-view" class="app-view hidden">
-    <!-- Top Preference Tab Container Styled Like Theme Segmented Control -->
-    <div class="glass-card settings-card preference-tab-wrapper-card">
-        <div id="preference-tab-trigger" class="preference-segmented-trigger">
-            <span class="preference-tab-label">Preference</span>
-            <span class="tab-chevron">▾</span>
-        </div>
-    </div>
+                        <!-- Settings View -->
+            <div id="settings-view" class="app-view hidden">
+                <div class="glass-card settings-card">
+                    <h3>Preferences</h3>
+                    <div class="setting-item">
+                        <span>Liquid Glass Intensity</span>
+                        <span class="setting-badge">Ultra HD</span>
+                    </div>
+                    <div class="setting-item">
+                        <span>Engine Version</span>
+                        <span class="setting-badge">iOS 26.1</span>
+                    </div>
+                    
+                    <!-- Dynamic Ambient Mesh Section (New) -->
+                    <div class="setting-item setting-item-toggle">
+                        <div class="setting-text-group">
+                            <span class="setting-label-title">Dynamic Ambient Mesh</span>
+                            <span class="setting-label-subtitle">Animate background color transitions</span>
+                        </div>
+                        <label class="ios-switch">
+                            <input type="checkbox" id="ambient-mesh-toggle">
+                            <span class="ios-slider"></span>
+                        </label>
+                    </div>
 
-    <!-- Preference Section Container (Below the tab section) -->
-    <div id="preference-section-container" class="glass-card settings-card preference-dropdown-card">
-        <h3>Preferences</h3>
-        <div class="setting-item">
-            <span>Liquid Glass Intensity</span>
-            <span class="setting-badge">Ultra HD</span>
-        </div>
-        <div class="setting-item">
-            <span>Engine Version</span>
-            <span class="setting-badge">iOS 26.1</span>
-        </div>
-        
-        <!-- Dynamic Ambient Mesh Section -->
-        <div class="setting-item setting-item-toggle">
-            <div class="setting-text-group">
-                <span class="setting-label-title">Dynamic Ambient Mesh</span>
-                <span class="setting-label-subtitle">Animate background color transitions</span>
+                    <!-- Theme Container -->
+                    <div class="setting-group-vertical">
+                        <span class="setting-label">Appearance Theme</span>
+                        <div class="theme-segmented-control">
+                            <button class="theme-btn active" data-theme="system">System</button>
+                            <button class="theme-btn" data-theme="light">Light</button>
+                            <button class="theme-btn" data-theme="dark">Dark</button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <label class="ios-switch">
-                <input type="checkbox" id="ambient-mesh-toggle">
-                <span class="ios-slider"></span>
-            </label>
-        </div>
-
-        <!-- Theme Container -->
-        <div class="setting-group-vertical">
-            <span class="setting-label">Appearance Theme</span>
-            <div class="theme-segmented-control">
-                <button class="theme-btn active" data-theme="system">System</button>
-                <button class="theme-btn" data-theme="light">Light</button>
-                <button class="theme-btn" data-theme="dark">Dark</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Lyrics Provider Tab Container Styled Like Preference -->
-    <div class="glass-card settings-card lyrics-provider-tab-wrapper-card">
-        <div id="lyrics-provider-tab-trigger" class="preference-segmented-trigger">
-            <span class="preference-tab-label">Lyrics Provider</span>
-            <span class="tab-chevron">▾</span>
-        </div>
-    </div>
-
-    <!-- Lyrics Provider Selection Container -->
-    <div id="lyrics-provider-section-container" class="glass-card settings-card preference-dropdown-card collapsed">
-        <h3>Select Lyrics Provider</h3>
-        <div class="provider-list">
-            <div class="setting-item provider-item active" data-provider="applemusic">
-                <span>Apple Music</span>
-                <div class="circle-selector"></div>
-            </div>
-            <div class="setting-item provider-item" data-provider="musixmatch">
-                <span>Musixmatch</span>
-                <div class="circle-selector"></div>
-            </div>
-            <div class="setting-item provider-item" data-provider="deezer">
-                <span>Deezer</span>
-                <div class="circle-selector"></div>
-            </div>
-            <div class="setting-item provider-item" data-provider="netease">
-                <span>Netease</span>
-                <div class="circle-selector"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-
 
         </section>
     </main>
