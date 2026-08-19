@@ -6,27 +6,32 @@
     --glass-border: rgba(255, 255, 255, 0.14);
     --glass-highlight: rgba(255, 255, 255, 0.3);
     --card-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    --icon-filter: invert(1);
     --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
 }
 
-/* Explicit Light Theme Overrides */
-body[data-theme="light"] {
+/* Light Theme Styling */
+body.light-theme {
     --bg-color: #f2f2f7;
     --text-primary: rgba(0, 0, 0, 0.95);
     --text-secondary: rgba(0, 0, 0, 0.55);
     --glass-bg: rgba(255, 255, 255, 0.65);
     --glass-border: rgba(0, 0, 0, 0.08);
+    --glass-highlight: rgba(255, 255, 255, 0.8);
     --card-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    --icon-filter: invert(0);
 }
 
-/* Explicit Dark Theme Overrides */
-body[data-theme="dark"] {
+/* Dark Theme Styling */
+body.dark-theme {
     --bg-color: #000000;
     --text-primary: rgba(255, 255, 255, 0.95);
     --text-secondary: rgba(255, 255, 255, 0.55);
     --glass-bg: rgba(25, 25, 30, 0.7);
     --glass-border: rgba(255, 255, 255, 0.12);
+    --glass-highlight: rgba(255, 255, 255, 0.25);
     --card-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    --icon-filter: invert(1);
 }
 
 * {
@@ -48,7 +53,7 @@ body {
     position: relative;
     padding: 20px;
     padding-bottom: 100px;
-    transition: background-color 0.3s ease;
+    transition: background-color 0.4s ease, color 0.4s ease;
 }
 
 /* Mesh Background Accents */
@@ -127,6 +132,22 @@ body {
     color: var(--text-secondary);
 }
 
+/* Smooth iOS 26 View Transitions */
+.app-view {
+    animation: iOSFadeSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes iOSFadeSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
 .app-view.hidden { display: none; }
 .glass-card.hidden { display: none !important; }
 
@@ -140,6 +161,7 @@ body {
     padding: 24px;
     position: relative;
     overflow: hidden;
+    transition: background 0.4s ease, border 0.4s ease, box-shadow 0.4s ease;
 }
 
 .welcome-card h2 { font-size: 20px; margin-bottom: 10px; }
@@ -163,6 +185,7 @@ body {
     width: 20px;
     height: 20px;
     opacity: 0.6;
+    filter: var(--icon-filter);
 }
 
 #search-input {
@@ -176,7 +199,7 @@ body {
 #search-input::placeholder { color: var(--text-secondary); }
 
 .clear-btn {
-    background: rgba(150, 150, 150, 0.2);
+    background: var(--glass-border);
     border: none;
     color: var(--text-primary);
     width: 22px;
@@ -228,7 +251,7 @@ body {
     cursor: pointer;
     transition: background 0.2s;
 }
-.song-item:hover { background: rgba(150, 150, 150, 0.1); }
+.song-item:hover { background: var(--glass-border); }
 
 .song-thumb {
     width: 44px;
@@ -260,7 +283,7 @@ body {
     font-size: 14px;
 }
 .setting-badge {
-    background: rgba(150, 150, 150, 0.15);
+    background: var(--glass-border);
     padding: 4px 10px;
     border-radius: 10px;
     font-size: 12px;
@@ -281,7 +304,7 @@ body {
 
 .theme-segmented-control {
     display: flex;
-    background: rgba(150, 150, 150, 0.12);
+    background: var(--glass-border);
     padding: 4px;
     border-radius: 16px;
     gap: 4px;
@@ -349,6 +372,7 @@ body {
 .tab-icon {
     width: 22px;
     height: 22px;
+    filter: var(--icon-filter);
     opacity: 0.6;
     transition: opacity 0.3s, transform 0.3s;
     margin-bottom: 2px;
@@ -361,7 +385,7 @@ body {
 }
 
 .tab-item.active {
-    background: rgba(150, 150, 150, 0.2);
+    background: var(--glass-border);
     color: var(--text-primary);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
 }
