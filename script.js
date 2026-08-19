@@ -277,3 +277,17 @@ if (ambientMeshToggle && meshBgElement) {
         }
     });
 }
+
+
+
+
+// --- Settings Tab Section Toggle Logic ---
+const preferenceTabTrigger = document.getElementById('preference-tab-trigger');
+const preferenceSectionContainer = document.getElementById('preference-section-container');
+
+if (preferenceTabTrigger && preferenceSectionContainer) {
+    preferenceTabTrigger.addEventListener('click', () => {
+        preferenceSectionContainer.classList.toggle('collapsed');
+        preferenceTabTrigger.parentElement.classList.toggle('collapsed');
+    });
+}
