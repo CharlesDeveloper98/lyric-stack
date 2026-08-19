@@ -203,7 +203,7 @@ body {
 }
 .clear-btn.hidden { display: none; }
 
-/* Results Panel */
+/* Results & Lyrics Panels */
 .results-header, .lyrics-header {
     display: flex;
     justify-content: space-between;
@@ -247,24 +247,10 @@ body {
 }
 .icon-btn:hover { opacity: 1; }
 
-.results-body {
-    max-height: 340px;
+.results-body, .lyrics-body {
+    max-height: 280px;
     overflow-y: auto;
     padding-right: 4px;
-}
-
-/* Global Popup Lyrics Card (Standard View) */
-.lyrics-card {
-    position: fixed;
-    bottom: 90px;
-    left: 20px;
-    right: 20px;
-    max-width: 440px;
-    margin: 0 auto;
-    z-index: 999;
-    max-height: 400px;
-    display: flex;
-    flex-direction: column;
 }
 
 .lyrics-body {
@@ -272,22 +258,18 @@ body {
     line-height: 1.7;
     color: var(--text-secondary);
     white-space: pre-line;
-    max-height: 280px;
-    overflow-y: auto;
-    padding-right: 4px;
 }
 
-/* Full Screen Immersive Popup Mode (Covers everything from status bar to bottom bar) */
+/* Full Screen Popup Mode (Only applies when expanded) */
 .lyrics-card.fullscreen-mode {
     position: fixed !important;
-    top: 8px !important;
-    left: 8px !important;
-    right: 8px !important;
-    bottom: 8px !important;
+    top: 10px !important;
+    left: 10px !important;
+    right: 10px !important;
+    bottom: 10px !important;
     width: auto !important;
     height: auto !important;
     max-width: none !important;
-    max-height: none !important;
     border-radius: 28px !important;
     z-index: 9999 !important;
     padding: 24px 20px !important;
