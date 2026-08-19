@@ -48,23 +48,6 @@
                     </div>
                     <div id="results-content" class="results-body"></div>
                 </div>
-
-                <!-- Lyrics Display View Card -->
-                <section id="lyrics-section" class="glass-card lyrics-card hidden">
-                    <div class="lyrics-header">
-                        <div>
-                            <span id="lyrics-artist-tag" class="artist-tag">Artist</span>
-                            <h3 id="lyrics-title">Song Title</h3>
-                        </div>
-                        <div class="lyrics-actions">
-                            <button id="fullscreen-lyrics-btn" class="text-action-btn" title="Toggle full screen">See full lyrics...</button>
-                            <button id="close-lyrics" class="icon-btn">&times;</button>
-                        </div>
-                    </div>
-                    <div id="lyrics-content" class="lyrics-body">
-                        <p class="placeholder-text">Loading lyrics vector...</p>
-                    </div>
-                </section>
             </div>
 
             <!-- Settings View -->
@@ -93,6 +76,23 @@
             </div>
         </section>
     </main>
+
+    <!-- Lyrics Display View Card (Root Level for Fullscreen Expansion) -->
+    <section id="lyrics-section" class="glass-card lyrics-card hidden">
+        <div class="lyrics-header">
+            <div>
+                <span id="lyrics-artist-tag" class="artist-tag">Artist</span>
+                <h3 id="lyrics-title">Song Title</h3>
+            </div>
+            <div class="lyrics-actions">
+                <button id="fullscreen-lyrics-btn" class="text-action-btn" title="Toggle full screen">See full lyrics...</button>
+                <button id="close-lyrics" class="icon-btn">&times;</button>
+            </div>
+        </div>
+        <div id="lyrics-content" class="lyrics-body">
+            <p class="placeholder-text">Loading lyrics vector...</p>
+        </div>
+    </section>
 
     <!-- iOS Floating Glass Bottom Tab Bar -->
     <nav class="floating-tab-bar">
