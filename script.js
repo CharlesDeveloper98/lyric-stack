@@ -1,4 +1,3 @@
-// Dynamic Views Elements
 const views = {
     home: document.getElementById('home-view'),
     search: document.getElementById('search-view'),
@@ -6,7 +5,6 @@ const views = {
 };
 const headerSubtitle = document.getElementById('header-subtitle');
 
-// Navigation & Morphing Capsule Elements
 const floatingTabBar = document.getElementById('floating-tab-bar');
 const homeTabBtn = document.getElementById('home-tab-btn');
 const settingsTabBtn = document.getElementById('settings-tab-btn');
@@ -17,7 +15,6 @@ const searchInput = document.getElementById('search-input');
 const micBtn = document.getElementById('mic-btn');
 const closeSearchBtn = document.getElementById('close-search-btn');
 
-// Search & Lyrics Elements
 const resultsSection = document.getElementById('results-section');
 const resultsContent = document.getElementById('results-content');
 const lyricsSection = document.getElementById('lyrics-section');
@@ -27,16 +24,11 @@ const lyricsArtistTag = document.getElementById('lyrics-artist-tag');
 const closeLyricsBtn = document.getElementById('close-lyrics');
 const fullscreenLyricsBtn = document.getElementById('fullscreen-lyrics-btn');
 
-// Theme Elements
 const themeButtons = document.querySelectorAll('.theme-btn');
 const bodyElement = document.body;
 
 let searchTimeout = null;
-
-// Ensure lyrics starts hidden
 lyricsSection.classList.add('hidden');
-
-// --- Navigation Tab Handlers ---
 
 homeTabBtn.addEventListener('click', () => {
     if (floatingTabBar.classList.contains('search-expanded')) {
@@ -46,7 +38,6 @@ homeTabBtn.addEventListener('click', () => {
 });
 
 settingsTabBtn.addEventListener('click', () => {
-    // If search is expanded, clicking settings on the left capsule switches directly to settings view
     if (floatingTabBar.classList.contains('search-expanded')) {
         collapseSearchCapsule();
     }
@@ -66,42 +57,35 @@ function switchTab(target) {
     }
 }
 
-// Step 1: Initial tap on search container expands the search bar
 searchTriggerBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    expandSearchBarOnly();
+    expandSearchBar();
 });
 
-// Step 2: Tapping directly inside the search input opens keyboard state
 searchInput.addEventListener('click', (e) => {
     e.stopPropagation();
-    activateKeyboardState();
 });
 
-function expandSearchBarOnly() {
+function expandSearchBar() {
     floatingTabBar.classList.add('search-expanded');
     searchInputWrapper.classList.remove('hidden');
+    closeSearchBtn.classList.remove('hidden');
     switchView('search');
     searchTriggerBtn.classList.add('active');
 
-    // Deselect home, make settings active inside the left capsule during search
+    // Left capsule shows ONLY Settings
     homeTabBtn.classList.remove('active');
     settingsTabBtn.classList.add('active');
+    searchInput.focus();
 }
 
-function activateKeyboardState() {
-    floatingTabBar.classList.add('keyboard-active');
-    closeSearchBtn.classList.remove('hidden');
-}
-
-// Exit search / keyboard view via "X" button
 closeSearchBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     collapseSearchCapsule();
 });
 
 function collapseSearchCapsule() {
-    floatingTabBar.classList.remove('search-expanded', 'keyboard-active');
+    floatingTabBar.classList.remove('search-expanded');
     searchInputWrapper.classList.add('hidden');
     closeSearchBtn.classList.add('hidden');
     searchTriggerBtn.classList.remove('active');
@@ -110,7 +94,6 @@ function collapseSearchCapsule() {
     searchInput.value = '';
     searchInput.blur();
     
-    // Return to Home tab active state
     switchTab('home');
 }
 
@@ -132,18 +115,14 @@ function switchView(targetView) {
     });
 }
 
-// Microphone action handler
 if (micBtn) {
     micBtn.addEventListener('click', () => {
         searchInput.focus();
-        activateKeyboardState();
     });
 }
 
-// --- Theme Switcher ---
 function applyTheme(themeMode) {
     bodyElement.classList.remove('light-theme', 'dark-theme');
-    
     if (themeMode === 'light') {
         bodyElement.classList.add('light-theme');
     } else if (themeMode === 'dark') {
@@ -162,15 +141,12 @@ themeButtons.forEach(btn => {
     btn.addEventListener('click', () => {
         themeButtons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-
-        const selectedTheme = btn.getAttribute('data-theme');
-        applyTheme(selectedTheme);
+        applyTheme(btn.getAttribute('data-theme'));
     });
 });
 
 applyTheme('system');
 
-// --- Search & Lyrics Logic ---
 searchInput.addEventListener('input', (e) => {
     const query = e.target.value.trim();
     if (query.length === 0) {
