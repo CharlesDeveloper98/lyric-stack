@@ -30,18 +30,12 @@
             <div id="home-view" class="app-view">
                 <div class="glass-card welcome-card">
                     <h2>Discover Lyrics Instantly</h2>
-                    <p>Tap the <b>Search</b> icon in the bottom right floating capsule to look up lyrics from any song or artist worldwide.</p>
+                    <p>Tap the <b>Search</b> capsule on the bottom right to look up lyrics from any song or artist worldwide with fluid iOS 26 animations.</p>
                 </div>
             </div>
 
-            <!-- Search View -->
+            <!-- Search View (Container expanded dynamically from bottom search bar) -->
             <div id="search-view" class="app-view hidden">
-                <div class="glass-search-box">
-                    <img src="assets/search.png" class="tab-icon-inline" alt="Search">
-                    <input type="text" id="search-input" placeholder="Search song title or artist..." autocomplete="off">
-                    <button id="clear-btn" class="clear-btn hidden">&times;</button>
-                </div>
-                
                 <div id="results-section" class="glass-card results-card hidden">
                     <div class="results-header">
                         <h3>Search Results</h3>
@@ -94,9 +88,9 @@
         </section>
     </main>
 
-    <!-- iOS Floating Glass Bottom Tab Bar -->
-    <nav class="floating-tab-bar">
-        <div class="tab-capsule left-capsule">
+    <!-- iOS Floating Glass Bottom Tab Bar with Fluid Search Expansion -->
+    <nav class="floating-tab-bar" id="floating-tab-bar">
+        <div class="tab-capsule left-capsule" id="left-capsule">
             <button class="tab-item active" data-target="home">
                 <img src="assets/home.png" alt="Home" class="tab-icon">
                 <span>Home</span>
@@ -107,11 +101,17 @@
             </button>
         </div>
 
-        <div class="tab-capsule right-capsule">
-            <button class="tab-item" data-target="search">
-                <img src="assets/search.png" alt="Search" class="tab-icon">
-                <span>Search</span>
+        <div class="tab-capsule right-capsule search-capsule-container" id="right-capsule">
+            <button class="tab-item search-trigger-btn" data-target="search" id="search-trigger-btn">
+                <img src="assets/search.png" alt="Search" class="tab-icon" id="search-capsule-icon">
+                <span id="search-label-text">Search</span>
             </button>
+            <div class="search-input-wrapper hidden" id="search-input-wrapper">
+                <img src="assets/search.png" alt="Search" class="tab-icon-inline">
+                <input type="text" id="search-input" placeholder="Artists, Songs, Lyrics..." autocomplete="off">
+                <button id="clear-btn" class="clear-btn hidden">&times;</button>
+                <button id="close-search-btn" class="close-search-inline-btn">&times;</button>
+            </div>
         </div>
     </nav>
 
