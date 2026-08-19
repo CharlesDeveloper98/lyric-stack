@@ -17,6 +17,7 @@ const lyricsContent = document.getElementById('lyrics-content');
 const lyricsTitle = document.getElementById('lyrics-title');
 const lyricsArtistTag = document.getElementById('lyrics-artist-tag');
 const closeLyricsBtn = document.getElementById('close-lyrics');
+const fullscreenLyricsBtn = document.getElementById('fullscreen-lyrics-btn');
 
 // Theme Switcher Elements
 const themeButtons = document.querySelectorAll('.theme-btn');
@@ -45,12 +46,12 @@ tabItems.forEach(tab => {
             }
         });
 
-        // Update Subtitle based on view
+        // Update Subtitle based on view (WITHOUT auto-focusing keyboard)
         if (targetView === 'home') {
             headerSubtitle.textContent = "Welcome to your personal music lyric hub";
         } else if (targetView === 'search') {
             headerSubtitle.textContent = "Query global music catalogs instantly";
-            searchInput.focus();
+            // Removed searchInput.focus() so keyboard won't pop up automatically on view change
         } else if (targetView === 'settings') {
             headerSubtitle.textContent = "Customize your Liquid Glass experience";
         }
@@ -66,7 +67,6 @@ function applyTheme(themeMode) {
     } else if (themeMode === 'dark') {
         bodyElement.classList.add('dark-theme');
     } else {
-        // System Theme: Check operating system preference
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         if (prefersDark) {
             bodyElement.classList.add('dark-theme');
@@ -76,7 +76,6 @@ function applyTheme(themeMode) {
     }
 }
 
-// Listen to OS theme changes dynamically if "system" is active
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     const activeBtn = document.querySelector('.theme-btn.active');
     if (activeBtn && activeBtn.getAttribute('data-theme') === 'system') {
@@ -84,7 +83,6 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
     }
 });
 
-// Theme Switcher Logic via UI clicks
 themeButtons.forEach(btn => {
     btn.addEventListener('click', () => {
         themeButtons.forEach(b => b.classList.remove('active'));
@@ -95,7 +93,6 @@ themeButtons.forEach(btn => {
     });
 });
 
-// Initialize with System Theme by default
 applyTheme('system');
 
 // Search Input Listener
@@ -119,21 +116,33 @@ clearBtn.addEventListener('click', () => {
     searchInput.value = '';
     clearBtn.classList.add('hidden');
     resultsSection.classList.add('hidden');
+    lyricsSection.classList.remove('fullscreen-mode');
     lyricsSection.classList.add('hidden');
     searchInput.focus();
 });
 
 closeLyricsBtn.addEventListener('click', () => {
+    lyricsSection.classList.remove('fullscreen-mode');
     lyricsSection.classList.add('hidden');
 });
 
-// 1. Search Music API Catalog
+// "See full lyrics..." full screen transition toggle
+fullscreenLyricsBtn.addEventListener('click', () => {
+    lyricsSection.classList.toggle('fullscreen-mode');
+    if (lyricsSection.classList.contains('fullscreen-mode')) {
+        fullscreenLyricsBtn.textContent = "Exit full screen";
+    } else {
+        fullscreenLyricsBtn.textContent = "See full lyrics...";
+    }
+});
+
+// 1. Search Music API Catalog with Wider Range (limit increased to 25)
 async function performMusicSearch(query) {
     resultsSection.classList.remove('hidden');
-    resultsContent.innerHTML = `<p class="placeholder-text">Searching music databases...</p>`;
+    resultsContent.innerHTML = `<p class="placeholder-text">Searching wide music catalogs...</p>`;
 
     try {
-        const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=8`);
+        const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=25`);
         const data = await response.json();
 
         if (data.results && data.results.length > 0) {
@@ -171,9 +180,11 @@ function renderSongList(tracks) {
     });
 }
 
-// 3. Fetch Full Lyrics (Displays modal strictly inside the Search view)
+// 3. Fetch Full Lyrics
 async function fetchLyrics(artist, title) {
     resultsSection.classList.add('hidden');
+    lyricsSection.classList.remove('fullscreen-mode');
+    fullscreenLyricsBtn.textContent = "See full lyrics...";
     lyricsSection.classList.remove('hidden');
     lyricsTitle.textContent = title;
     lyricsArtistTag.textContent = artist;
