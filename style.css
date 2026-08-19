@@ -300,7 +300,9 @@ body {
 
 
 
-/* --- Enhanced iOS Floating Tab Bar & Liquid Bubble Physics --- */
+
+
+/* --- iOS Floating Tab Bar & Morphing Capsules --- */
 .floating-tab-bar {
     position: fixed;
     bottom: 28px;
@@ -325,17 +327,14 @@ body {
     align-items: center;
     padding: 6px;
     gap: 4px;
-    /* Super-springy fluid curve for bubble morphing */
-    transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    will-change: width, padding, transform;
-    height: 60px;
+    transition: all 0.55s var(--ios-spring);
+    will-change: width, padding;
+    height: 60px; /* Exact uniform height match */
 }
 
 .left-capsule {
     display: flex;
     align-items: center;
-    position: relative;
-    overflow: hidden; /* Contains the fluid sliding bubble container */
 }
 
 .tab-item {
@@ -346,62 +345,47 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 6px 18px;
+    padding: 6px 16px;
     height: 48px;
     border-radius: 32px;
     cursor: pointer;
     color: var(--text-primary);
-    position: relative;
-    z-index: 2; /* Keeps text and icon above the liquid background pill */
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+    transition: all 0.38s var(--ios-spring);
     white-space: nowrap;
 }
 
 .tab-item:active {
-    transform: scale(0.88);
+    transform: scale(0.92);
 }
 
 .tab-icon {
     width: 22px;
     height: 22px;
     filter: var(--icon-filter);
-    opacity: 0.7;
-    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+    opacity: 0.85;
+    transition: transform 0.35s var(--ios-spring);
     margin-bottom: 2px;
 }
 
 .tab-label {
     font-size: 11px;
-    font-weight: 500;
+    font-weight: 600;
     letter-spacing: -0.1px;
-    opacity: 0.7;
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.35s var(--ios-spring);
 }
 
-/* --- Liquid Bubble Active State Morphing --- */
+/* Active Highlight Pill inside Left Capsule */
 .tab-item.active {
     background: var(--active-pill-bg);
-    /* Gelatinous squash-and-stretch micro-animation on activation */
-    animation: liquidBubbleMorph 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.4) forwards;
 }
 
 .tab-item.active .tab-icon {
-    opacity: 1;
-    transform: scale(1.12);
-}
-
-.tab-item.active .tab-label {
-    opacity: 1;
-    font-weight: 600;
-}
-
-@keyframes liquidBubbleMorph {
-    0% { transform: scale(0.85); border-radius: 24px; }
-    50% { transform: scale(1.08) translateY(-1px); border-radius: 36px; }
-    100% { transform: scale(1); border-radius: 32px; }
+    transform: scale(1.05);
 }
 
 /* --- Search Expanded State Animations --- */
+
+/* 1. Left Capsule collapses to ONLY Settings button, removing active background selector entirely */
 .floating-tab-bar.search-expanded .left-capsule {
     padding: 6px;
     background: var(--glass-bg);
@@ -412,7 +396,7 @@ body {
     opacity: 0;
     padding: 0;
     margin: 0;
-    transform: scale(0.5);
+    transform: scale(0.6);
     pointer-events: none;
     overflow: hidden;
 }
@@ -424,7 +408,6 @@ body {
     border-radius: 50%;
     background: transparent !important;
     box-shadow: none !important;
-    animation: none;
 }
 
 .floating-tab-bar.search-expanded #tab-settings .tab-label {
@@ -436,6 +419,7 @@ body {
     opacity: 0.9;
 }
 
+/* 2. Right Search Capsule expands into full Input Bar with bouncy liquid transition */
 .floating-tab-bar.search-expanded .right-capsule {
     width: 280px;
     padding: 6px 14px;
@@ -444,7 +428,6 @@ body {
 .floating-tab-bar.search-expanded #search-trigger-btn {
     display: none;
 }
-
 
 
 .search-input-wrapper {
