@@ -46,6 +46,7 @@ homeTabBtn.addEventListener('click', () => {
 });
 
 settingsTabBtn.addEventListener('click', () => {
+    // If search is expanded, clicking settings on the left capsule switches directly to settings view
     if (floatingTabBar.classList.contains('search-expanded')) {
         collapseSearchCapsule();
     }
@@ -65,13 +66,13 @@ function switchTab(target) {
     }
 }
 
-// Step 1: Initial tap on search container expands the search bar WITHOUT opening keyboard
+// Step 1: Initial tap on search container expands the search bar
 searchTriggerBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     expandSearchBarOnly();
 });
 
-// Step 2: Tapping directly inside the search input opens keyboard and shows exit button
+// Step 2: Tapping directly inside the search input opens keyboard state
 searchInput.addEventListener('click', (e) => {
     e.stopPropagation();
     activateKeyboardState();
@@ -83,9 +84,9 @@ function expandSearchBarOnly() {
     switchView('search');
     searchTriggerBtn.classList.add('active');
 
-    // Deselect left capsule tabs when search is open
+    // Deselect home, make settings active inside the left capsule during search
     homeTabBtn.classList.remove('active');
-    settingsTabBtn.classList.remove('active');
+    settingsTabBtn.classList.add('active');
 }
 
 function activateKeyboardState() {
