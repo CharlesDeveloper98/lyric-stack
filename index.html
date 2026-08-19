@@ -6,7 +6,7 @@
     <title>LyricSpot - iOS Liquid Glass</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body data-theme="system">
     <!-- Liquid Glass Mesh Background -->
     <div class="mesh-bg">
         <div class="blob blob-1"></div>
@@ -34,7 +34,7 @@
                 </div>
             </div>
 
-            <!-- Search View (Hidden by default, triggered via tab bar) -->
+            <!-- Search View -->
             <div id="search-view" class="app-view hidden">
                 <div class="glass-search-box">
                     <img src="assets/search.png" class="tab-icon-inline" alt="Search">
@@ -50,7 +50,7 @@
                 </div>
             </div>
 
-            <!-- Settings View (Hidden by default) -->
+            <!-- Settings View -->
             <div id="settings-view" class="app-view hidden">
                 <div class="glass-card settings-card">
                     <h3>Preferences</h3>
@@ -62,11 +62,21 @@
                         <span>Engine Version</span>
                         <span class="setting-badge">iOS 26.1</span>
                     </div>
+                    
+                    <!-- Theme Container -->
+                    <div class="setting-group-vertical">
+                        <span class="setting-label">Appearance Theme</span>
+                        <div class="theme-segmented-control">
+                            <button class="theme-btn active" data-theme="system">System</button>
+                            <button class="theme-btn" data-theme="light">Light</button>
+                            <button class="theme-btn" data-theme="dark">Dark</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- Lyrics Display View Modal -->
+        <!-- Lyrics Display View Modal (Hidden by default) -->
         <section id="lyrics-section" class="glass-card lyrics-card hidden">
             <div class="lyrics-header">
                 <div>
@@ -83,7 +93,6 @@
 
     <!-- iOS Floating Glass Bottom Tab Bar -->
     <nav class="floating-tab-bar">
-        <!-- Left Capsule Container (Home & Settings) -->
         <div class="tab-capsule left-capsule">
             <button class="tab-item active" data-target="home">
                 <img src="assets/home.png" alt="Home" class="tab-icon">
@@ -95,7 +104,6 @@
             </button>
         </div>
 
-        <!-- Right Capsule Container (Search only) -->
         <div class="tab-capsule right-capsule">
             <button class="tab-item" data-target="search">
                 <img src="assets/search.png" alt="Search" class="tab-icon">
