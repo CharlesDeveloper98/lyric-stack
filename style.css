@@ -593,3 +593,65 @@ body {
     50% { background: #32ade6; }
     100% { background: #34c759; }
 }
+
+
+
+
+
+/* --- Renovated Settings Tab Section & Container --- */
+.settings-tab-container {
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: transform 0.25s var(--ios-spring);
+}
+
+.settings-tab-container:active {
+    transform: scale(0.98);
+}
+
+.settings-tab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.tab-chevron {
+    font-size: 14px;
+    transition: transform 0.35s var(--ios-spring);
+    color: var(--text-secondary);
+}
+
+/* Demarcation line requested */
+.settings-demarcation-line {
+    width: 100%;
+    height: 1px;
+    background: var(--glass-border);
+    margin-top: 12px;
+}
+
+/* Collapsible Preference Container Below */
+.preference-dropdown-card {
+    max-height: 600px;
+    opacity: 1;
+    overflow: hidden;
+    transition: max-height 0.45s var(--ios-spring), opacity 0.35s ease, padding 0.45s ease;
+}
+
+/* Collapsed State Class */
+.preference-dropdown-card.collapsed {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    opacity: 0;
+    border: none;
+    margin-top: 0;
+}
+
+/* Rotate chevron when collapsed */
+.settings-tab-container.collapsed .tab-chevron {
+    transform: rotate(-90deg);
+}
