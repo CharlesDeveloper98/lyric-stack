@@ -247,3 +247,20 @@ function escapeHTML(str) {
         tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
 }
+
+
+
+// --- Dynamic Ambient Mesh Toggle Logic ---
+const ambientMeshToggle = document.getElementById('ambient-mesh-toggle');
+const meshBgElement = document.querySelector('.mesh-bg');
+
+if (ambientMeshToggle && meshBgElement) {
+    ambientMeshToggle.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            meshBgElement.classList.add('mesh-animated');
+        } else {
+            meshBgElement.classList.remove('mesh-animated');
+        }
+    });
+}
+
