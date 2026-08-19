@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LyricSpot - Apple Music Liquid Glass</title>
+    <title>LyricSpot - iOS Liquid Glass</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Dynamic Mesh Background (Liquid Glass Accents) -->
+    <!-- Liquid Glass Mesh Background -->
     <div class="mesh-bg">
         <div class="blob blob-1"></div>
         <div class="blob blob-2"></div>
@@ -18,33 +18,55 @@
         <!-- Header -->
         <header class="app-header">
             <div class="header-badge">
-                <span class="pulse-dot"></span> Apple Music Glass UI
+                <span class="pulse-dot"></span> iOS Liquid Glass Engine
             </div>
             <h1>LyricSpot</h1>
-            <p class="subtitle-header">Search any track to instantly explore lyrics</p>
+            <p id="header-subtitle" class="subtitle-header">Welcome to your personal music lyric hub</p>
         </header>
 
-        <!-- Liquid Glass Search Bar -->
-        <section class="search-section">
-            <div class="glass-search-box">
-                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-                <input type="text" id="search-input" placeholder="Search song title or artist..." autocomplete="off">
-                <button id="clear-btn" class="clear-btn hidden">&times;</button>
+        <!-- Dynamic Views Container -->
+        <section id="main-view-container" class="view-container">
+            <!-- Home View (Default) -->
+            <div id="home-view" class="app-view">
+                <div class="glass-card welcome-card">
+                    <h2>Discover Lyrics Instantly</h2>
+                    <p>Tap the <b>Search</b> icon in the bottom right floating capsule to look up lyrics from any song or artist worldwide.</p>
+                </div>
+            </div>
+
+            <!-- Search View (Hidden by default, triggered via tab bar) -->
+            <div id="search-view" class="app-view hidden">
+                <div class="glass-search-box">
+                    <img src="assets/search.png" class="tab-icon-inline" alt="Search">
+                    <input type="text" id="search-input" placeholder="Search song title or artist..." autocomplete="off">
+                    <button id="clear-btn" class="clear-btn hidden">&times;</button>
+                </div>
+                
+                <div id="results-section" class="glass-card results-card hidden">
+                    <div class="results-header">
+                        <h3>Search Results</h3>
+                    </div>
+                    <div id="results-content" class="results-body"></div>
+                </div>
+            </div>
+
+            <!-- Settings View (Hidden by default) -->
+            <div id="settings-view" class="app-view hidden">
+                <div class="glass-card settings-card">
+                    <h3>Preferences</h3>
+                    <div class="setting-item">
+                        <span>Liquid Glass Intensity</span>
+                        <span class="setting-badge">Ultra HD</span>
+                    </div>
+                    <div class="setting-item">
+                        <span>Engine Version</span>
+                        <span class="setting-badge">iOS 26.1</span>
+                    </div>
+                </div>
             </div>
         </section>
 
-        <!-- Dynamic Results / State Container -->
-        <section id="results-section" class="glass-card results-card hidden">
-            <div class="results-header">
-                <h3 id="results-title">Search Results</h3>
-                <button id="close-results" class="icon-btn">&times;</button>
-            </div>
-            <div id="results-content" class="results-body">
-                <!-- Populated dynamically -->
-            </div>
-        </section>
-
-        <!-- Lyrics Modal / View Panel -->
+        <!-- Lyrics Display View Modal -->
         <section id="lyrics-section" class="glass-card lyrics-card hidden">
             <div class="lyrics-header">
                 <div>
@@ -58,6 +80,29 @@
             </div>
         </section>
     </main>
+
+    <!-- iOS Floating Glass Bottom Tab Bar -->
+    <nav class="floating-tab-bar">
+        <!-- Left Capsule Container (Home & Settings) -->
+        <div class="tab-capsule left-capsule">
+            <button class="tab-item active" data-target="home">
+                <img src="assets/home.png" alt="Home" class="tab-icon">
+                <span>Home</span>
+            </button>
+            <button class="tab-item" data-target="settings">
+                <img src="assets/settings.png" alt="Settings" class="tab-icon">
+                <span>Settings</span>
+            </button>
+        </div>
+
+        <!-- Right Capsule Container (Search only) -->
+        <div class="tab-capsule right-capsule">
+            <button class="tab-item" data-target="search">
+                <img src="assets/search.png" alt="Search" class="tab-icon">
+                <span>Search</span>
+            </button>
+        </div>
+    </nav>
 
     <script src="script.js"></script>
 </body>
