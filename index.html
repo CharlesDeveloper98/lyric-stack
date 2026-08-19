@@ -30,7 +30,7 @@
             <div id="home-view" class="app-view">
                 <div class="glass-card welcome-card">
                     <h2>Discover Lyrics Instantly</h2>
-                    <p>Tap the <b>Search</b> icon in the bottom right floating capsule to look up lyrics from any song or artist worldwide.</p>
+                    <p>Tap the <b>Search</b> capsule on the right to look up lyrics from any song or artist worldwide.</p>
                 </div>
             </div>
 
@@ -90,11 +90,11 @@
 
     <!-- iOS Floating Glass Bottom Tab Bar -->
     <nav class="floating-tab-bar" id="floating-tab-bar">
-        <!-- Left Capsule Container (Shows Home on Home view, switches to Settings when Search is active) -->
+        <!-- Left Capsule Container (Defaults to Settings on Home view, switches to Home on Settings/Search views) -->
         <div class="tab-capsule left-capsule" id="left-capsule">
-            <button class="tab-item active" data-target="home" id="left-tab-btn">
-                <img src="assets/home.png" alt="Home" class="tab-icon" id="left-tab-icon">
-                <span class="tab-label" id="left-tab-label">Home</span>
+            <button class="tab-item" data-target="settings" id="left-tab-btn">
+                <img src="assets/settings.png" alt="Settings" class="tab-icon" id="left-tab-icon">
+                <span class="tab-label" id="left-tab-label">Settings</span>
             </button>
         </div>
 
