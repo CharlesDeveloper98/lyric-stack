@@ -1,5 +1,4 @@
-// Tab Switching Elements
-const tabItems = document.querySelectorAll('.tab-item[data-target]');
+// Dynamic Views Elements
 const views = {
     home: document.getElementById('home-view'),
     search: document.getElementById('search-view'),
@@ -7,18 +6,16 @@ const views = {
 };
 const headerSubtitle = document.getElementById('header-subtitle');
 
-// Fluid Search Capsule Elements
+// Navigation & Morphing Capsule Elements
 const floatingTabBar = document.getElementById('floating-tab-bar');
-const leftCapsule = document.getElementById('left-capsule');
-const rightCapsule = document.getElementById('right-capsule');
+const tabHome = document.getElementById('tab-home');
+const tabSettings = document.getElementById('tab-settings');
 const searchTriggerBtn = document.getElementById('search-trigger-btn');
 const searchInputWrapper = document.getElementById('search-input-wrapper');
-const searchLabelText = document.getElementById('search-label-text');
-const searchCapsuleIcon = document.getElementById('search-capsule-icon');
-const closeSearchBtn = document.getElementById('close-search-btn');
+const searchInput = document.getElementById('search-input');
+const micBtn = document.getElementById('mic-btn');
 
 // Search & Lyrics Elements
-const searchInput = document.getElementById('search-input');
 const clearBtn = document.getElementById('clear-btn');
 const resultsSection = document.getElementById('results-section');
 const resultsContent = document.getElementById('results-content');
@@ -29,99 +26,88 @@ const lyricsArtistTag = document.getElementById('lyrics-artist-tag');
 const closeLyricsBtn = document.getElementById('close-lyrics');
 const fullscreenLyricsBtn = document.getElementById('fullscreen-lyrics-btn');
 
-// Theme Switcher Elements
+// Theme Elements
 const themeButtons = document.querySelectorAll('.theme-btn');
 const bodyElement = document.body;
 
 let searchTimeout = null;
 
-// Ensure lyrics section starts completely hidden on load
+// Ensure lyrics starts hidden
 lyricsSection.classList.add('hidden');
 
-// Switch standard views (Home / Settings)
-tabItems.forEach(tab => {
-    tab.addEventListener('click', () => {
-        const targetView = tab.getAttribute('data-target');
-        if (targetView === 'search') return; // Handled separately by expansion
+// --- Navigation & Fluid Animation Handler ---
 
-        // Collapse search container if open when switching away
+tabHome.addEventListener('click', () => {
+    if (floatingTabBar.classList.contains('search-expanded')) {
         collapseSearchCapsule();
-
-        tabItems.forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-
-        Object.keys(views).forEach(key => {
-            if (key === targetView) {
-                views[key].classList.remove('hidden');
-            } else {
-                views[key].classList.add('hidden');
-            }
-        });
-
-        if (targetView === 'home') {
-            headerSubtitle.textContent = "Welcome to your personal music lyric hub";
-        } else if (targetView === 'settings') {
-            headerSubtitle.textContent = "Customize your Liquid Glass experience";
-        }
-    });
+    }
+    switchView('home');
 });
 
-// iOS 26 Fluid Search Capsule Expansion Trigger
+tabSettings.addEventListener('click', () => {
+    if (floatingTabBar.classList.contains('search-expanded')) {
+        collapseSearchCapsule();
+    }
+    switchView('settings');
+});
+
 searchTriggerBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     expandSearchCapsule();
 });
 
 function expandSearchCapsule() {
-    // Activate search view state
+    floatingTabBar.classList.add('search-expanded');
+    switchView('search');
+
+    tabHome.classList.remove('active');
+    tabSettings.classList.remove('active');
+    searchTriggerBtn.classList.add('active');
+
+    setTimeout(() => {
+        searchInput.focus();
+    }, 250);
+}
+
+function collapseSearchCapsule() {
+    floatingTabBar.classList.remove('search-expanded');
+    searchTriggerBtn.classList.remove('active');
+    resultsSection.classList.add('hidden');
+    lyricsSection.classList.add('hidden');
+    searchInput.value = '';
+}
+
+function switchView(targetView) {
+    if (targetView === 'home') {
+        tabHome.classList.add('active');
+        tabSettings.classList.remove('active');
+        headerSubtitle.textContent = "Welcome to your personal music lyric hub";
+    } else if (targetView === 'settings') {
+        tabSettings.classList.add('active');
+        tabHome.classList.remove('active');
+        headerSubtitle.textContent = "Customize your Liquid Glass experience";
+    } else if (targetView === 'search') {
+        headerSubtitle.textContent = "Query global music catalogs instantly";
+    }
+
     Object.keys(views).forEach(key => {
-        if (key === 'search') {
+        if (key === targetView) {
             views[key].classList.remove('hidden');
         } else {
             views[key].classList.add('hidden');
         }
     });
+}
 
-    headerSubtitle.textContent = "Query global music catalogs instantly";
-
-    // Trigger iOS 26 morphing styles
-    leftCapsule.classList.add('slide-out-left');
-    rightCapsule.classList.add('expanded-search-mode');
-    searchTriggerBtn.classList.add('hidden');
-    searchInputWrapper.classList.remove('hidden');
-    
-    // Deactivate non-search tabs
-    tabItems.forEach(t => t.classList.remove('active'));
-    searchTriggerBtn.classList.add('active');
-
-    setTimeout(() => {
+// Microphone action handler
+if (micBtn) {
+    micBtn.addEventListener('click', () => {
         searchInput.focus();
-    }, 200);
+        // Optional voice search logic trigger point
+    });
 }
 
-function collapseSearchCapsule() {
-    leftCapsule.classList.remove('slide-out-left');
-    rightCapsule.classList.remove('expanded-search-mode');
-    searchInputWrapper.classList.add('hidden');
-    searchTriggerBtn.classList.remove('hidden');
-    resultsSection.classList.add('hidden');
-    lyricsSection.classList.add('hidden');
-    searchInput.value = '';
-    clearBtn.classList.add('hidden');
-}
-
-closeSearchBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    collapseSearchCapsule();
-    
-    // Return to home view state smoothly
-    views['search'].classList.add('hidden');
-    views['home'].classList.remove('hidden');
-    document.querySelector('.tab-item[data-target="home"]').classList.add('active');
-    headerSubtitle.textContent = "Welcome to your personal music lyric hub";
-});
-
-// Theme Application Function
+// --- Theme Switcher ---
 function applyTheme(themeMode) {
     bodyElement.classList.remove('light-theme', 'dark-theme');
     
@@ -139,13 +125,6 @@ function applyTheme(themeMode) {
     }
 }
 
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-    const activeBtn = document.querySelector('.theme-btn.active');
-    if (activeBtn && activeBtn.getAttribute('data-theme') === 'system') {
-        applyTheme('system');
-    }
-});
-
 themeButtons.forEach(btn => {
     btn.addEventListener('click', () => {
         themeButtons.forEach(b => b.classList.remove('active'));
@@ -158,13 +137,10 @@ themeButtons.forEach(btn => {
 
 applyTheme('system');
 
-// Search Input Listener
+// --- Search & Lyrics Logic ---
 searchInput.addEventListener('input', (e) => {
     const query = e.target.value.trim();
-    if (query.length > 0) {
-        clearBtn.classList.remove('hidden');
-    } else {
-        clearBtn.classList.add('hidden');
+    if (query.length === 0) {
         resultsSection.classList.add('hidden');
         return;
     }
@@ -175,15 +151,6 @@ searchInput.addEventListener('input', (e) => {
     }, 400);
 });
 
-clearBtn.addEventListener('click', () => {
-    searchInput.value = '';
-    clearBtn.classList.add('hidden');
-    resultsSection.classList.add('hidden');
-    lyricsSection.classList.remove('fullscreen-mode');
-    lyricsSection.classList.add('hidden');
-    searchInput.focus();
-});
-
 closeLyricsBtn.addEventListener('click', () => {
     lyricsSection.classList.remove('fullscreen-mode');
     lyricsSection.classList.add('hidden');
@@ -191,14 +158,11 @@ closeLyricsBtn.addEventListener('click', () => {
 
 fullscreenLyricsBtn.addEventListener('click', () => {
     lyricsSection.classList.toggle('fullscreen-mode');
-    if (lyricsSection.classList.contains('fullscreen-mode')) {
-        fullscreenLyricsBtn.textContent = "Exit full screen";
-    } else {
-        fullscreenLyricsBtn.textContent = "See full lyrics...";
-    }
+    fullscreenLyricsBtn.textContent = lyricsSection.classList.contains('fullscreen-mode') 
+        ? "Exit full screen" 
+        : "See full lyrics...";
 });
 
-// Search Music API Catalog
 async function performMusicSearch(query) {
     resultsSection.classList.remove('hidden');
     resultsContent.innerHTML = `<p class="placeholder-text">Searching wide music catalogs...</p>`;
@@ -217,7 +181,6 @@ async function performMusicSearch(query) {
     }
 }
 
-// Render List Results
 function renderSongList(tracks) {
     resultsContent.innerHTML = '';
     tracks.forEach(track => {
@@ -242,7 +205,6 @@ function renderSongList(tracks) {
     });
 }
 
-// Fetch Full Lyrics
 async function fetchLyrics(artist, title) {
     resultsSection.classList.add('hidden');
     lyricsSection.classList.remove('fullscreen-mode');
