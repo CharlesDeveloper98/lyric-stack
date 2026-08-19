@@ -30,7 +30,7 @@
             <div id="home-view" class="app-view">
                 <div class="glass-card welcome-card">
                     <h2>Discover Lyrics Instantly</h2>
-                    <p>Tap the <b>Search</b> capsule on the right to look up lyrics from any song or artist worldwide.</p>
+                    <p>Tap the <b>Search</b> icon in the bottom right floating capsule to look up lyrics from any song or artist worldwide.</p>
                 </div>
             </div>
 
@@ -90,20 +90,21 @@
 
     <!-- iOS Floating Glass Bottom Tab Bar -->
     <nav class="floating-tab-bar" id="floating-tab-bar">
-        <!-- Left Capsule Container (Home & Settings normally; collapses to Settings-only when searching) -->
+        <!-- Left Capsule Container (Home & Settings) -->
         <div class="tab-capsule left-capsule" id="left-capsule">
-            <button class="tab-item active" data-target="home" id="home-tab-btn">
+            <button class="tab-item active" data-target="home" id="tab-home">
                 <img src="assets/home.png" alt="Home" class="tab-icon">
                 <span class="tab-label">Home</span>
             </button>
-            <button class="tab-item" data-target="settings" id="settings-tab-btn">
+            <button class="tab-item" data-target="settings" id="tab-settings">
                 <img src="assets/settings.png" alt="Settings" class="tab-icon">
                 <span class="tab-label">Settings</span>
             </button>
         </div>
 
-        <!-- Right Capsule Container (Search -> Expands to Bar) -->
+        <!-- Right Capsule Container (Search Capsule -> Expands to Bar) -->
         <div class="tab-capsule right-capsule" id="right-capsule">
+            <!-- Normal Search Button -->
             <button class="tab-item search-trigger-btn" data-target="search" id="search-trigger-btn">
                 <img src="assets/search.png" alt="Search" class="tab-icon">
                 <span class="tab-label">Search</span>
@@ -118,11 +119,6 @@
                 </button>
             </div>
         </div>
-
-        <!-- iOS Exit "X" Container (Appears on the far right when search is active) -->
-        <button class="close-capsule-btn hidden" id="close-search-btn" title="Exit Search">
-            <span class="close-x-icon">&times;</span>
-        </button>
     </nav>
 
     <script src="script.js"></script>
