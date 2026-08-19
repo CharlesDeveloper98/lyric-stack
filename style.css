@@ -203,7 +203,7 @@ body {
 }
 .clear-btn.hidden { display: none; }
 
-/* Results & Lyrics Panels */
+/* Results Panel */
 .results-header, .lyrics-header {
     display: flex;
     justify-content: space-between;
@@ -247,24 +247,49 @@ body {
 }
 .icon-btn:hover { opacity: 1; }
 
-.results-body, .lyrics-body {
+.results-body {
     max-height: 340px;
     overflow-y: auto;
     padding-right: 4px;
 }
 
-/* Full Screen Immersive Lyrics Mode (Covers everything from status bar to bottom bar) */
+/* Global Popup Lyrics Card (Standard View) */
+.lyrics-card {
+    position: fixed;
+    bottom: 90px;
+    left: 20px;
+    right: 20px;
+    max-width: 440px;
+    margin: 0 auto;
+    z-index: 999;
+    max-height: 400px;
+    display: flex;
+    flex-direction: column;
+}
+
+.lyrics-body {
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    white-space: pre-line;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+/* Full Screen Immersive Popup Mode (Covers everything from status bar to bottom bar) */
 .lyrics-card.fullscreen-mode {
     position: fixed !important;
-    top: 12px !important;
-    left: 12px !important;
-    right: 12px !important;
-    bottom: 12px !important;
+    top: 8px !important;
+    left: 8px !important;
+    right: 8px !important;
+    bottom: 8px !important;
     width: auto !important;
     height: auto !important;
     max-width: none !important;
-    border-radius: 24px !important;
-    z-index: 1000 !important;
+    max-height: none !important;
+    border-radius: 28px !important;
+    z-index: 9999 !important;
     padding: 24px 20px !important;
     display: flex;
     flex-direction: column;
@@ -299,12 +324,6 @@ body {
 .song-meta h4 { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
 .song-meta p { font-size: 12px; color: var(--text-secondary); }
 
-.lyrics-body {
-    font-size: 15px;
-    line-height: 1.7;
-    color: var(--text-secondary);
-    white-space: pre-line;
-}
 .placeholder-text { text-align: center; padding: 30px 0; font-style: italic; color: var(--text-secondary); }
 
 /* Settings View Styles & Theme Container */
