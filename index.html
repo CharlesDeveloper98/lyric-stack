@@ -90,15 +90,11 @@
 
     <!-- iOS Floating Glass Bottom Tab Bar -->
     <nav class="floating-tab-bar" id="floating-tab-bar">
-        <!-- Left Capsule Container (Home / Settings dynamic switcher) -->
+        <!-- Left Capsule Container (Shows Home on Home view, switches to Settings when Search is active) -->
         <div class="tab-capsule left-capsule" id="left-capsule">
-            <button class="tab-item active" data-target="home" id="tab-home">
-                <img src="assets/home.png" alt="Home" class="tab-icon">
-                <span class="tab-label">Home</span>
-            </button>
-            <button class="tab-item" data-target="settings" id="tab-settings">
-                <img src="assets/settings.png" alt="Settings" class="tab-icon">
-                <span class="tab-label">Settings</span>
+            <button class="tab-item active" data-target="home" id="left-tab-btn">
+                <img src="assets/home.png" alt="Home" class="tab-icon" id="left-tab-icon">
+                <span class="tab-label" id="left-tab-label">Home</span>
             </button>
         </div>
 
