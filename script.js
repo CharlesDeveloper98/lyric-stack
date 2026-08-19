@@ -214,12 +214,12 @@ function renderSongList(tracks) {
 // Add constant element mapping
 const backToResultsBtn = document.getElementById('back-to-results-btn');
 
-// Replace closeLyricsBtn logic with backToResultsBtn logic
 backToResultsBtn.addEventListener('click', () => {
     lyricsSection.classList.remove('fullscreen-mode');
     lyricsSection.classList.add('hidden');
-    resultsSection.classList.remove('hidden'); // Bring back the search results list
+    resultsSection.classList.remove('hidden'); // Restores the exact search results list
 });
+
 
 // Update fetchLyrics function to ensure results view hides cleanly
 async function fetchLyrics(artist, title) {
