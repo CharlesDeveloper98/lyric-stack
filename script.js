@@ -1,8 +1,17 @@
+// Tab Switching Elements
+const tabItems = document.querySelectorAll('.tab-item');
+const views = {
+    home: document.getElementById('home-view'),
+    search: document.getElementById('search-view'),
+    settings: document.getElementById('settings-view')
+};
+const headerSubtitle = document.getElementById('header-subtitle');
+
+// Search & Lyrics Elements
 const searchInput = document.getElementById('search-input');
 const clearBtn = document.getElementById('clear-btn');
 const resultsSection = document.getElementById('results-section');
 const resultsContent = document.getElementById('results-content');
-const closeResultsBtn = document.getElementById('close-results');
 const lyricsSection = document.getElementById('lyrics-section');
 const lyricsContent = document.getElementById('lyrics-content');
 const lyricsTitle = document.getElementById('lyrics-title');
@@ -11,7 +20,39 @@ const closeLyricsBtn = document.getElementById('close-lyrics');
 
 let searchTimeout = null;
 
-// Handle Search Input Dynamics
+// Handle Floating Bottom Tab Navigation
+tabItems.forEach(tab => {
+    tab.addEventListener('click', () => {
+        const targetView = tab.getAttribute('data-target');
+
+        // Update Active states for tabs
+        tabItems.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        // Toggle Views visibility
+        Object.keys(views).forEach(key => {
+            if (key === targetView) {
+                views[key].classList.remove('hidden');
+            } else {
+                views[key].classList.add('hidden');
+            }
+        });
+
+        // Update Subtitle based on view
+        if (targetView === 'home') {
+            headerSubtitle.textContent = "Welcome to your personal music lyric hub";
+            lyricsSection.classList.add('hidden');
+        } else if (targetView === 'search') {
+            headerSubtitle.textContent = "Query global music catalogs instantly";
+            searchInput.focus();
+        } else if (targetView === 'settings') {
+            headerSubtitle.textContent = "Customize your Liquid Glass experience";
+            lyricsSection.classList.add('hidden');
+        }
+    });
+});
+
+// Search Input Listener
 searchInput.addEventListener('input', (e) => {
     const query = e.target.value.trim();
     if (query.length > 0) {
@@ -25,7 +66,7 @@ searchInput.addEventListener('input', (e) => {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
         performMusicSearch(query);
-    }, 400); // Debounce lookup
+    }, 400);
 });
 
 clearBtn.addEventListener('click', () => {
@@ -36,18 +77,14 @@ clearBtn.addEventListener('click', () => {
     searchInput.focus();
 });
 
-closeResultsBtn.addEventListener('click', () => {
-    resultsSection.classList.add('hidden');
-});
-
 closeLyricsBtn.addEventListener('click', () => {
     lyricsSection.classList.add('hidden');
 });
 
-// 1. Search Music Catalog via Public API (iTunes Search API ecosystem for 100% active endpoints)
+// 1. Search Music API Catalog
 async function performMusicSearch(query) {
     resultsSection.classList.remove('hidden');
-    resultsContent.innerHTML = `<p class="placeholder-text">Searching Apple Music catalog...</p>`;
+    resultsContent.innerHTML = `<p class="placeholder-text">Searching music databases...</p>`;
 
     try {
         const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=8`);
@@ -59,11 +96,11 @@ async function performMusicSearch(query) {
             resultsContent.innerHTML = `<p class="placeholder-text">No tracks found matching "${query}"</p>`;
         }
     } catch (err) {
-        resultsContent.innerHTML = `<p class="placeholder-text">Network error. Please check connection.</p>`;
+        resultsContent.innerHTML = `<p class="placeholder-text">Network connection error.</p>`;
     }
 }
 
-// 2. Render Search Results List inside Glass Card
+// 2. Render List Results
 function renderSongList(tracks) {
     resultsContent.innerHTML = '';
     tracks.forEach(track => {
@@ -80,7 +117,6 @@ function renderSongList(tracks) {
             </div>
         `;
 
-        // When a song from the list is clicked, fetch and show lyrics
         item.addEventListener('click', () => {
             fetchLyrics(track.artistName, track.trackName);
         });
@@ -89,7 +125,7 @@ function renderSongList(tracks) {
     });
 }
 
-// 3. Fetch Synchronized/Standard Lyrics via Secure Repositories
+// 3. Fetch Full Lyrics
 async function fetchLyrics(artist, title) {
     resultsSection.classList.add('hidden');
     lyricsSection.classList.remove('hidden');
@@ -118,10 +154,10 @@ async function fetchSecondaryLyricsSource(artist, title) {
         if (data && data.lyrics) {
             lyricsContent.textContent = data.lyrics;
         } else {
-            lyricsContent.innerHTML = `<p class="placeholder-text">Instrumental or lyrics unavailable for <b>${title}</b>.</p>`;
+            lyricsContent.innerHTML = `<p class="placeholder-text">Lyrics unavailable for <b>${title}</b>.</p>`;
         }
     } catch (err) {
-        lyricsContent.innerHTML = `<p class="placeholder-text">Could not load lyrics for this track selection.</p>`;
+        lyricsContent.innerHTML = `<p class="placeholder-text">Could not resolve lyrics securely.</p>`;
     }
 }
 
