@@ -4,7 +4,6 @@
     --text-secondary: rgba(255, 255, 255, 0.55);
     --glass-bg: rgba(255, 255, 255, 0.65);
     --glass-border: rgba(255, 255, 255, 0.4);
-    --glass-highlight: rgba(255, 255, 255, 0.8);
     --active-pill-bg: rgba(0, 0, 0, 0.08);
     --card-shadow: 0 30px 60px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.5);
     --capsule-shadow: 0 15px 35px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.6);
@@ -52,7 +51,7 @@ body {
     position: fixed;
     width: 100vw;
     height: 100vh;
-    padding: 20px;
+    padding: 24px;
     padding-bottom: 120px;
 }
 
@@ -84,7 +83,8 @@ body {
 
 .app-container {
     width: 100%;
-    max-width: 480px;
+    max-width: 440px; /* Reduced to provide more side breathing room */
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -154,7 +154,7 @@ body {
     box-shadow: var(--card-shadow);
     padding: 24px;
     position: relative;
-    overflow: hidden;
+    overflow: hidden; /* Fixes corner clipping / grey edge artifacting */
     transition: all 0.45s var(--ios-spring);
 }
 
@@ -231,7 +231,7 @@ body {
     flex-shrink: 0;
 }
 
-.song-meta h4 { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+.song-meta h4 { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
 .song-meta p { font-size: 12px; color: var(--text-secondary); }
 
 .placeholder-text { text-align: center; padding: 30px 0; font-style: italic; color: var(--text-secondary); }
@@ -292,13 +292,14 @@ body {
 /* --- iOS Floating Tab Bar & Morphing Capsules --- */
 .floating-tab-bar {
     position: fixed;
-    bottom: 28px;
+    bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     gap: 12px;
     z-index: 100;
-    width: auto;
+    width: 90%;
+    max-width: 420px;
     align-items: center;
     justify-content: center;
     transition: all 0.55s var(--ios-spring);
@@ -316,14 +317,12 @@ body {
     padding: 6px;
     gap: 4px;
     transition: all 0.55s var(--ios-spring);
-    will-change: width, padding;
     height: 60px;
 }
 
 .left-capsule {
     display: flex;
     align-items: center;
-    transition: all 0.55s var(--ios-spring);
 }
 
 .tab-item {
@@ -360,20 +359,15 @@ body {
     font-size: 11px;
     font-weight: 600;
     letter-spacing: -0.1px;
-    transition: all 0.35s var(--ios-spring);
 }
 
 .tab-item.active {
     background: var(--active-pill-bg);
 }
 
-.tab-item.active .tab-icon {
-    transform: scale(1.05);
-}
-
 /* --- Search Expanded State Animations --- */
 .floating-tab-bar.search-expanded .right-capsule {
-    width: 280px;
+    flex: 1;
     padding: 6px 14px;
 }
 
@@ -408,7 +402,6 @@ body {
     outline: none;
     color: var(--text-primary);
     font-size: 15px;
-    font-weight: 400;
     width: 100%;
 }
 #search-input::placeholder { color: var(--text-secondary); }
@@ -429,14 +422,9 @@ body {
     height: 18px;
     filter: var(--icon-filter);
     opacity: 0.85;
-    transition: transform 0.2s var(--ios-spring);
 }
 
-.mic-btn:hover .mic-icon {
-    transform: scale(1.1);
-}
-
-/* Search Expanded / Keyboard Active State: Hide Home tab, keep only Settings tab on the left capsule */
+/* When search is expanded: Hide Home tab on the left capsule so only Settings remains */
 .floating-tab-bar.search-expanded #home-tab-btn {
     width: 0;
     padding: 0;
@@ -444,14 +432,6 @@ body {
     opacity: 0;
     overflow: hidden;
     pointer-events: none;
-}
-
-.floating-tab-bar.search-expanded .left-capsule {
-    padding: 6px; /* Keeps single circular/compact pill shape for Settings */
-}
-
-.floating-tab-bar.keyboard-active .right-capsule {
-    width: 310px;
 }
 
 .close-capsule-btn {
