@@ -64,9 +64,8 @@ function expandSearchCapsule() {
     tabSettings.classList.remove('active');
     searchTriggerBtn.classList.add('active');
 
-    setTimeout(() => {
-        searchInput.focus();
-    }, 250);
+    // Removed auto-focus to prevent keyboard from popping up automatically.
+    // The keyboard will now only trigger when the user explicitly taps inside the input field.
 }
 
 function collapseSearchCapsule() {
@@ -76,6 +75,7 @@ function collapseSearchCapsule() {
     resultsSection.classList.add('hidden');
     lyricsSection.classList.add('hidden');
     searchInput.value = '';
+    searchInput.blur();
 }
 
 function switchView(targetView) {
