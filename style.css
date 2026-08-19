@@ -4,11 +4,13 @@
     --text-secondary: rgba(255, 255, 255, 0.55);
     --glass-bg: rgba(255, 255, 255, 0.65);
     --glass-border: rgba(255, 255, 255, 0.4);
+    --glass-highlight: rgba(255, 255, 255, 0.8);
     --active-pill-bg: rgba(0, 0, 0, 0.08);
     --card-shadow: 0 30px 60px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.5);
     --capsule-shadow: 0 15px 35px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.6);
     --icon-filter: invert(0);
     --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    /* Spring Bouncy Liquid Transition Curve */
     --ios-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -48,10 +50,8 @@ body {
     justify-content: center;
     align-items: center;
     overflow-x: hidden;
-    position: fixed;
-    width: 100vw;
-    height: 100vh;
-    padding: 24px;
+    position: relative;
+    padding: 20px;
     padding-bottom: 120px;
 }
 
@@ -83,14 +83,11 @@ body {
 
 .app-container {
     width: 100%;
-    max-width: 440px; /* Reduced to provide more side breathing room */
-    margin: 0 auto;
+    max-width: 480px;
     display: flex;
     flex-direction: column;
     gap: 20px;
     z-index: 1;
-    overflow-y: auto;
-    max-height: 80vh;
 }
 
 .app-header {
@@ -154,13 +151,14 @@ body {
     box-shadow: var(--card-shadow);
     padding: 24px;
     position: relative;
-    overflow: hidden; /* Fixes corner clipping / grey edge artifacting */
+    overflow: hidden;
     transition: all 0.45s var(--ios-spring);
 }
 
 .welcome-card h2 { font-size: 20px; margin-bottom: 10px; }
 .welcome-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
 
+/* Results & Lyrics Panels */
 .results-header, .lyrics-header {
     display: flex;
     justify-content: space-between;
@@ -221,7 +219,9 @@ body {
     cursor: pointer;
     transition: background 0.25s var(--ios-spring);
 }
-.song-item:hover { background: var(--active-pill-bg); }
+.song-item:hover { 
+    background: var(--active-pill-bg); 
+}
 
 .song-thumb {
     width: 44px;
@@ -231,11 +231,12 @@ body {
     flex-shrink: 0;
 }
 
-.song-meta h4 { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
+.song-meta h4 { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
 .song-meta p { font-size: 12px; color: var(--text-secondary); }
 
 .placeholder-text { text-align: center; padding: 30px 0; font-style: italic; color: var(--text-secondary); }
 
+/* Settings View Styles */
 .settings-card h3 { font-size: 18px; margin-bottom: 16px; }
 .setting-item {
     display: flex;
@@ -292,17 +293,15 @@ body {
 /* --- iOS Floating Tab Bar & Morphing Capsules --- */
 .floating-tab-bar {
     position: fixed;
-    bottom: 30px;
+    bottom: 28px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     gap: 12px;
     z-index: 100;
-    width: 90%;
-    max-width: 420px;
+    width: auto;
     align-items: center;
     justify-content: center;
-    transition: all 0.55s var(--ios-spring);
 }
 
 .tab-capsule {
@@ -317,7 +316,8 @@ body {
     padding: 6px;
     gap: 4px;
     transition: all 0.55s var(--ios-spring);
-    height: 60px;
+    will-change: width, padding;
+    height: 60px; /* Exact uniform height match */
 }
 
 .left-capsule {
@@ -359,15 +359,57 @@ body {
     font-size: 11px;
     font-weight: 600;
     letter-spacing: -0.1px;
+    transition: all 0.35s var(--ios-spring);
 }
 
+/* Active Highlight Pill inside Left Capsule */
 .tab-item.active {
     background: var(--active-pill-bg);
 }
 
+.tab-item.active .tab-icon {
+    transform: scale(1.05);
+}
+
 /* --- Search Expanded State Animations --- */
+
+/* 1. Left Capsule collapses to ONLY Settings button, removing active background selector entirely */
+.floating-tab-bar.search-expanded .left-capsule {
+    padding: 6px;
+    background: var(--glass-bg);
+}
+
+.floating-tab-bar.search-expanded #tab-home {
+    max-width: 0;
+    opacity: 0;
+    padding: 0;
+    margin: 0;
+    transform: scale(0.6);
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.floating-tab-bar.search-expanded #tab-settings {
+    padding: 10px;
+    height: 48px;
+    width: 48px;
+    border-radius: 50%;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.floating-tab-bar.search-expanded #tab-settings .tab-label {
+    display: none;
+}
+
+.floating-tab-bar.search-expanded #tab-settings .tab-icon {
+    margin-bottom: 0;
+    opacity: 0.9;
+}
+
+/* 2. Right Search Capsule expands into full Input Bar with bouncy liquid transition */
 .floating-tab-bar.search-expanded .right-capsule {
-    flex: 1;
+    width: 280px;
     padding: 6px 14px;
 }
 
@@ -402,6 +444,7 @@ body {
     outline: none;
     color: var(--text-primary);
     font-size: 15px;
+    font-weight: 400;
     width: 100%;
 }
 #search-input::placeholder { color: var(--text-secondary); }
@@ -422,46 +465,9 @@ body {
     height: 18px;
     filter: var(--icon-filter);
     opacity: 0.85;
+    transition: transform 0.2s var(--ios-spring);
 }
 
-/* When search is expanded: Hide Home tab on the left capsule so only Settings remains */
-.floating-tab-bar.search-expanded #home-tab-btn {
-    width: 0;
-    padding: 0;
-    margin: 0;
-    opacity: 0;
-    overflow: hidden;
-    pointer-events: none;
-}
-
-.close-capsule-btn {
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    backdrop-filter: blur(45px) saturate(210%);
-    -webkit-backdrop-filter: blur(45px) saturate(210%);
-    border-radius: 50%;
-    box-shadow: var(--capsule-shadow);
-    width: 60px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.55s var(--ios-spring);
-    flex-shrink: 0;
-}
-
-.close-capsule-btn.hidden {
-    display: none !important;
-}
-
-.close-capsule-btn:active {
-    transform: scale(0.9);
-}
-
-.close-x-icon {
-    font-size: 28px;
-    color: var(--text-primary);
-    font-weight: 300;
-    line-height: 1;
+.mic-btn:hover .mic-icon {
+    transform: scale(1.1);
 }
