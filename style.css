@@ -9,6 +9,26 @@
     --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
 }
 
+/* Explicit Light Theme Overrides */
+body[data-theme="light"] {
+    --bg-color: #f2f2f7;
+    --text-primary: rgba(0, 0, 0, 0.95);
+    --text-secondary: rgba(0, 0, 0, 0.55);
+    --glass-bg: rgba(255, 255, 255, 0.65);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --card-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* Explicit Dark Theme Overrides */
+body[data-theme="dark"] {
+    --bg-color: #000000;
+    --text-primary: rgba(255, 255, 255, 0.95);
+    --text-secondary: rgba(255, 255, 255, 0.55);
+    --glass-bg: rgba(25, 25, 30, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --card-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -28,6 +48,7 @@ body {
     position: relative;
     padding: 20px;
     padding-bottom: 100px;
+    transition: background-color 0.3s ease;
 }
 
 /* Mesh Background Accents */
@@ -106,8 +127,8 @@ body {
     color: var(--text-secondary);
 }
 
-/* Views Management */
 .app-view.hidden { display: none; }
+.glass-card.hidden { display: none !important; }
 
 .glass-card {
     background: var(--glass-bg);
@@ -142,7 +163,6 @@ body {
     width: 20px;
     height: 20px;
     opacity: 0.6;
-    filter: invert(1);
 }
 
 #search-input {
@@ -156,7 +176,7 @@ body {
 #search-input::placeholder { color: var(--text-secondary); }
 
 .clear-btn {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(150, 150, 150, 0.2);
     border: none;
     color: var(--text-primary);
     width: 22px;
@@ -208,7 +228,7 @@ body {
     cursor: pointer;
     transition: background 0.2s;
 }
-.song-item:hover { background: rgba(255, 255, 255, 0.08); }
+.song-item:hover { background: rgba(150, 150, 150, 0.1); }
 
 .song-thumb {
     width: 44px;
@@ -229,21 +249,61 @@ body {
 }
 .placeholder-text { text-align: center; padding: 30px 0; font-style: italic; color: var(--text-secondary); }
 
-/* Settings View Styles */
+/* Settings View Styles & Theme Container */
 .settings-card h3 { font-size: 18px; margin-bottom: 16px; }
 .setting-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 0;
+    padding: 12px 0;
     border-bottom: 1px solid var(--glass-border);
     font-size: 14px;
 }
 .setting-badge {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(150, 150, 150, 0.15);
     padding: 4px 10px;
     border-radius: 10px;
     font-size: 12px;
+    font-weight: 600;
+}
+
+.setting-group-vertical {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.setting-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.theme-segmented-control {
+    display: flex;
+    background: rgba(150, 150, 150, 0.12);
+    padding: 4px;
+    border-radius: 16px;
+    gap: 4px;
+}
+
+.theme-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.theme-btn.active {
+    background: var(--glass-highlight);
+    color: var(--text-primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     font-weight: 600;
 }
 
@@ -259,12 +319,12 @@ body {
 }
 
 .tab-capsule {
-    background: rgba(20, 20, 25, 0.65);
+    background: var(--glass-bg);
     border: 1px solid var(--glass-border);
     backdrop-filter: blur(40px) saturate(200%);
     -webkit-backdrop-filter: blur(40px) saturate(200%);
     border-radius: 32px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
     display: flex;
     align-items: center;
     padding: 6px;
@@ -289,8 +349,8 @@ body {
 .tab-icon {
     width: 22px;
     height: 22px;
-    filter: invert(0.6);
-    transition: filter 0.3s, transform 0.3s;
+    opacity: 0.6;
+    transition: opacity 0.3s, transform 0.3s;
     margin-bottom: 2px;
 }
 
@@ -301,12 +361,12 @@ body {
 }
 
 .tab-item.active {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(150, 150, 150, 0.2);
     color: var(--text-primary);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
 }
 
 .tab-item.active .tab-icon {
-    filter: invert(1);
+    opacity: 1;
     transform: scale(1.05);
 }
