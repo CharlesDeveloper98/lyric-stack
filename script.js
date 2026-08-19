@@ -57,16 +57,46 @@ tabItems.forEach(tab => {
     });
 });
 
-// Theme Switcher Logic
+// Theme Application Function
+function applyTheme(themeMode) {
+    bodyElement.classList.remove('light-theme', 'dark-theme');
+    
+    if (themeMode === 'light') {
+        bodyElement.classList.add('light-theme');
+    } else if (themeMode === 'dark') {
+        bodyElement.classList.add('dark-theme');
+    } else {
+        // System Theme: Check operating system preference
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (prefersDark) {
+            bodyElement.classList.add('dark-theme');
+        } else {
+            bodyElement.classList.add('light-theme');
+        }
+    }
+}
+
+// Listen to OS theme changes dynamically if "system" is active
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    const activeBtn = document.querySelector('.theme-btn.active');
+    if (activeBtn && activeBtn.getAttribute('data-theme') === 'system') {
+        applyTheme('system');
+    }
+});
+
+// Theme Switcher Logic via UI clicks
 themeButtons.forEach(btn => {
     btn.addEventListener('click', () => {
         themeButtons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
 
         const selectedTheme = btn.getAttribute('data-theme');
-        bodyElement.setAttribute('data-theme', selectedTheme);
+        applyTheme(selectedTheme);
     });
 });
+
+// Initialize with System Theme by default
+applyTheme('system');
 
 // Search Input Listener
 searchInput.addEventListener('input', (e) => {
@@ -141,7 +171,7 @@ function renderSongList(tracks) {
     });
 }
 
-// 3. Fetch Full Lyrics (Displays modal only on song selection)
+// 3. Fetch Full Lyrics (Displays modal strictly inside the Search view)
 async function fetchLyrics(artist, title) {
     resultsSection.classList.add('hidden');
     lyricsSection.classList.remove('hidden');
