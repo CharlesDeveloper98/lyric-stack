@@ -250,17 +250,32 @@ function escapeHTML(str) {
 
 
 
-// --- Dynamic Ambient Mesh Toggle Logic ---
+// --- Dynamic Ambient Mesh Toggle Logic with Persistence ---
 const ambientMeshToggle = document.getElementById('ambient-mesh-toggle');
 const meshBgElement = document.querySelector('.mesh-bg');
 
+// 1. Check saved preference on app load (Default is OFF if nothing is saved)
+const savedMeshState = localStorage.getItem('lyricspot_ambient_mesh');
+
+if (savedMeshState === 'enabled') {
+    if (ambientMeshToggle) ambientMeshToggle.checked = true;
+    if (meshBgElement) meshBgElement.classList.add('mesh-animated');
+} else {
+    if (ambientMeshToggle) ambientMeshToggle.checked = false;
+    if (meshBgElement) meshBgElement.classList.remove('mesh-animated');
+}
+
+// 2. Listen for changes and save user preference to localStorage
 if (ambientMeshToggle && meshBgElement) {
     ambientMeshToggle.addEventListener('change', (e) => {
         if (e.target.checked) {
             meshBgElement.classList.add('mesh-animated');
+            localStorage.setItem('lyricspot_ambient_mesh', 'enabled');
         } else {
             meshBgElement.classList.remove('mesh-animated');
+            localStorage.setItem('lyricspot_ambient_mesh', 'disabled');
         }
     });
 }
+
 
