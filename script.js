@@ -202,6 +202,38 @@ async function fetchLyrics(artist, title) {
 }
 
 
+                                                                                                           
+
+// --- Lyrics Provider UI & Selection Logic ---
+const lyricsProviderTabTrigger = document.getElementById('lyrics-provider-tab-trigger');
+const lyricsProviderSectionContainer = document.getElementById('lyrics-provider-section-container');
+const providerItems = document.querySelectorAll('.provider-item');
+
+if (lyricsProviderTabTrigger && lyricsProviderSectionContainer) {
+    lyricsProviderTabTrigger.addEventListener('click', () => {
+        lyricsProviderSectionContainer.classList.toggle('collapsed');
+        lyricsProviderTabTrigger.closest('.lyrics-provider-tab-wrapper-card').classList.toggle('collapsed');
+    });
+}
+
+// Load saved provider state
+providerItems.forEach(item => {
+    if (item.getAttribute('data-provider') === activeLyricsProvider) {
+        providerItems.forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+    }
+
+    item.addEventListener('click', () => {
+        providerItems.forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        activeLyricsProvider = item.getAttribute('data-provider');
+        localStorage.setItem('lyricspot_provider', activeLyricsProvider);
+    });
+});
+
+
+
+
 function renderSongList(tracks) {
     resultsContent.innerHTML = '';
     tracks.forEach(track => {
