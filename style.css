@@ -169,38 +169,49 @@ body {
 
 
 
-/* --- Redesigned Search Results Container (iOS 26 Style) --- */
+
+/* --- Unified Glass Card Search Results Container --- */
 .results-card {
-    background: transparent !important;
-    border: none !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    max-height: 400px;
-    overflow-y: auto;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(40px) saturate(200%);
+    -webkit-backdrop-filter: blur(40px) saturate(200%);
+    border-radius: 28px;
+    box-shadow: var(--card-shadow);
+    padding: 20px;
+    max-height: 60vh; /* Expanded height so it shows much more and avoids feel of being cut off */
+    display: flex;
+    flex-direction: column;
 }
 
-.results-count-header {
-    padding: 0 4px 12px 4px;
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 10px;
+    flex-shrink: 0;
 }
 
-.results-count-header h3 {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text-primary);
-    letter-spacing: -0.3px;
+.results-header h3 {
+    font-size: 16px;
+    font-weight: 600;
 }
 
 .results-body {
+    overflow-y: auto;
+    max-height: calc(60vh - 60px);
+    padding-right: 4px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    max-height: 360px;
-    overflow-y: auto;
-    padding-right: 2px;
+    gap: 8px;
+    
+    /* Performance optimizations to stop scrolling jitter */
+    -webkit-overflow-scrolling: touch;
+    will-change: scroll-position;
+    transform: translateZ(0);
 }
-
 
 
 
@@ -257,53 +268,49 @@ Lyrics Panels */
     white-space: pre-line;
 }
 
-/* Individual Song Row matching the "25 results" container cards */
+/* Individual Song Row inside the unified Card */
 .song-item {
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 12px 14px;
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    backdrop-filter: blur(30px) saturate(180%);
-    -webkit-backdrop-filter: blur(30px) saturate(180%);
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    padding: 10px 12px;
+    border-radius: 16px;
     cursor: pointer;
-    transition: transform 0.25s var(--ios-spring), background 0.25s ease;
+    background: transparent;
+    transition: background 0.2s ease;
+    transform: translateZ(0); /* Fixes jitter/rendering artifacts on iOS/Safari engines */
+    will-change: background;
 }
 
 .song-item:active {
     transform: scale(0.97);
 }
 
-.song-item:hover {
-    background: var(--active-pill-bg);
+.song-item:hover { 
+    background: var(--active-pill-bg); 
 }
 
 
 .song-thumb {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
     object-fit: cover;
     flex-shrink: 0;
 }
 
-.song-meta h4 {
-    font-size: 15px;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 260px;
-    letter-spacing: -0.2px;
+.song-meta h4 { 
+    font-size: 14px; 
+    font-weight: 600; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    max-width: 260px; 
 }
 
-.song-meta p {
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin-top: 2px;
+.song-meta p { 
+    font-size: 12px; 
+    color: var(--text-secondary); 
 }
 
 .placeholder-text { text-align: center; padding: 30px 0; font-style: italic; color: var(--text-secondary); }
