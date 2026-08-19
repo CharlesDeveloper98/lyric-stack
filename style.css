@@ -479,3 +479,113 @@ body {
 .mic-btn:hover .mic-icon {
     transform: scale(1.1);
 }
+
+
+
+/* --- Dynamic Ambient Mesh Feature Styles --- */
+.setting-item-toggle {
+    align-items: center;
+    padding: 14px 0;
+}
+
+.setting-text-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.setting-label-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.setting-label-subtitle {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+/* iOS Style Toggle Switch */
+.ios-switch {
+    position: relative;
+    display: inline-block;
+    width: 51px;
+    height: 31px;
+    flex-shrink: 0;
+}
+
+.ios-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.ios-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(120, 120, 128, 0.32);
+    transition: 0.4s var(--ios-spring);
+    border-radius: 31px;
+}
+
+.ios-slider:before {
+    position: absolute;
+    content: "";
+    height: 27px;
+    width: 27px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: 0.35s var(--ios-spring);
+    border-radius: 50%;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+.ios-switch input:checked + .ios-slider {
+    background-color: #34c759; /* iOS Green */
+}
+
+.ios-switch input:checked + .ios-slider:before {
+    transform: translateX(20px);
+}
+
+/* Ambient Mesh Animation States */
+.mesh-bg .blob {
+    animation-play-state: paused; /* Default off */
+}
+
+.mesh-bg.mesh-animated .blob {
+    animation-play-state: running;
+}
+
+.mesh-bg.mesh-animated .blob-1 {
+    animation: floatBlob 12s infinite alternate cubic-bezier(0.37, 0, 0.63, 1), colorShift1 16s infinite alternate ease-in-out;
+}
+
+.mesh-bg.mesh-animated .blob-2 {
+    animation: floatBlob 15s infinite alternate cubic-bezier(0.37, 0, 0.63, 1), colorShift2 18s infinite alternate ease-in-out;
+}
+
+.mesh-bg.mesh-animated .blob-3 {
+    animation: floatBlob 14s infinite alternate cubic-bezier(0.37, 0, 0.63, 1), colorShift3 14s infinite alternate ease-in-out;
+}
+
+@keyframes colorShift1 {
+    0% { background: #fa233b; }
+    50% { background: #ff9500; }
+    100% { background: #af52de; }
+}
+
+@keyframes colorShift2 {
+    0% { background: #8e8e93; }
+    50% { background: #5856d6; }
+    100% { background: #007aff; }
+}
+
+@keyframes colorShift3 {
+    0% { background: #007aff; }
+    50% { background: #32ade6; }
+    100% { background: #34c759; }
+}
+
