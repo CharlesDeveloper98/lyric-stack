@@ -1,6 +1,3 @@
-let activeLyricsProvider = localStorage.getItem('lyricspot_provider') || 'applemusic';
-
-
 // Dynamic Views Elements
 const views = {
     home: document.getElementById('home-view'),
@@ -166,73 +163,23 @@ fullscreenLyricsBtn.addEventListener('click', () => {
         : "See full lyrics...";
 });
 
-async function fetchLyrics(artist, title) {
-    resultsSection.classList.add('hidden');
-    lyricsSection.classList.remove('fullscreen-mode');
-    fullscreenLyricsBtn.textContent = "See full lyrics...";
-    lyricsSection.classList.remove('hidden');
-    lyricsTitle.textContent = title;
-    lyricsArtistTag.textContent = artist;
-    lyricsContent.innerHTML = `<p class="placeholder-text">Fetching lyrics via ${activeLyricsProvider}...</p>`;
-
-    // Multi-provider cascading fetch strategy for 100% success rate
-    let lyricsFound = null;
+async function performMusicSearch(query) {
+    resultsSection.classList.remove('hidden');
+    resultsContent.innerHTML = `<p class="placeholder-text">Searching wide music catalogs...</p>`;
 
     try {
-        if (activeLyricsProvider === 'musixmatch' || activeLyricsProvider === 'applemusic') {
-            const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
-            const data = await res.json();
-            if (data.lyrics) lyricsFound = data.lyrics;
-        }
+        const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=25`);
+        const data = await response.json();
 
-        if (!lyricsFound) {
-            const res2 = await fetch(`https://some-random-api.com/others/lyrics?title=${encodeURIComponent(title)}`);
-            const data2 = await res2.json();
-            if (data2 && data2.lyrics) lyricsFound = data2.lyrics;
-        }
-
-        if (lyricsFound) {
-            lyricsContent.textContent = lyricsFound;
+        if (data.results && data.results.length > 0) {
+            renderSongList(data.results);
         } else {
-            lyricsContent.innerHTML = `<p class="placeholder-text">Instrumental or lyrics unavailable for <b>${title}</b>.</p>`;
+            resultsContent.innerHTML = `<p class="placeholder-text">No tracks found matching "${query}"</p>`;
         }
-    } catch (e) {
-        lyricsContent.innerHTML = `<p class="placeholder-text">Could not resolve lyrics securely from catalog.</p>`;
+    } catch (err) {
+        resultsContent.innerHTML = `<p class="placeholder-text">Network connection error.</p>`;
     }
 }
-
-
-                                                                                                           
-
-// --- Lyrics Provider UI & Selection Logic ---
-const lyricsProviderTabTrigger = document.getElementById('lyrics-provider-tab-trigger');
-const lyricsProviderSectionContainer = document.getElementById('lyrics-provider-section-container');
-const providerItems = document.querySelectorAll('.provider-item');
-
-if (lyricsProviderTabTrigger && lyricsProviderSectionContainer) {
-    lyricsProviderTabTrigger.addEventListener('click', () => {
-        lyricsProviderSectionContainer.classList.toggle('collapsed');
-        lyricsProviderTabTrigger.closest('.lyrics-provider-tab-wrapper-card').classList.toggle('collapsed');
-    });
-}
-
-// Load saved provider state
-providerItems.forEach(item => {
-    if (item.getAttribute('data-provider') === activeLyricsProvider) {
-        providerItems.forEach(i => i.classList.remove('active'));
-        item.classList.add('active');
-    }
-
-    item.addEventListener('click', () => {
-        providerItems.forEach(i => i.classList.remove('active'));
-        item.classList.add('active');
-        activeLyricsProvider = item.getAttribute('data-provider');
-        localStorage.setItem('lyricspot_provider', activeLyricsProvider);
-    });
-});
-
-
-
 
 function renderSongList(tracks) {
     resultsContent.innerHTML = '';
@@ -328,19 +275,5 @@ if (ambientMeshToggle && meshBgElement) {
             meshBgElement.classList.remove('mesh-animated');
             localStorage.setItem('lyricspot_ambient_mesh', 'disabled');
         }
-    });
-}
-
-
-
-
-// --- Settings Tab Section Toggle Logic ---
-const preferenceTabTrigger = document.getElementById('preference-tab-trigger');
-const preferenceSectionContainer = document.getElementById('preference-section-container');
-
-if (preferenceTabTrigger && preferenceSectionContainer) {
-    preferenceTabTrigger.addEventListener('click', () => {
-        preferenceSectionContainer.classList.toggle('collapsed');
-        preferenceTabTrigger.closest('.preference-tab-wrapper-card').classList.toggle('collapsed');
     });
 }
