@@ -16,7 +16,6 @@ const searchInput = document.getElementById('search-input');
 const micBtn = document.getElementById('mic-btn');
 
 // Search & Lyrics Elements
-const clearBtn = document.getElementById('clear-btn');
 const resultsSection = document.getElementById('results-section');
 const resultsContent = document.getElementById('results-content');
 const lyricsSection = document.getElementById('lyrics-section');
@@ -58,6 +57,7 @@ searchTriggerBtn.addEventListener('click', (e) => {
 
 function expandSearchCapsule() {
     floatingTabBar.classList.add('search-expanded');
+    searchInputWrapper.classList.remove('hidden');
     switchView('search');
 
     tabHome.classList.remove('active');
@@ -71,6 +71,7 @@ function expandSearchCapsule() {
 
 function collapseSearchCapsule() {
     floatingTabBar.classList.remove('search-expanded');
+    searchInputWrapper.classList.add('hidden');
     searchTriggerBtn.classList.remove('active');
     resultsSection.classList.add('hidden');
     lyricsSection.classList.add('hidden');
@@ -103,7 +104,6 @@ function switchView(targetView) {
 if (micBtn) {
     micBtn.addEventListener('click', () => {
         searchInput.focus();
-        // Optional voice search logic trigger point
     });
 }
 
