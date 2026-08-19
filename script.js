@@ -9,8 +9,10 @@ const headerSubtitle = document.getElementById('header-subtitle');
 // Navigation & Morphing Capsule Elements
 const floatingTabBar = document.getElementById('floating-tab-bar');
 const leftCapsule = document.getElementById('left-capsule');
-const tabHome = document.getElementById('tab-home');
-const tabSettings = document.getElementById('tab-settings');
+const leftTabBtn = document.getElementById('left-tab-btn');
+const leftTabIcon = document.getElementById('left-tab-icon');
+const leftTabLabel = document.getElementById('left-tab-label');
+
 const searchTriggerBtn = document.getElementById('search-trigger-btn');
 const searchInputWrapper = document.getElementById('search-input-wrapper');
 const searchInput = document.getElementById('search-input');
@@ -32,24 +34,30 @@ const themeButtons = document.querySelectorAll('.theme-btn');
 const bodyElement = document.body;
 
 let searchTimeout = null;
+let currentMode = 'home'; // Tracks whether left capsule is 'home' or 'settings'
 
 // Ensure lyrics starts hidden
 lyricsSection.classList.add('hidden');
 
 // --- Navigation & Fluid Animation Handler ---
 
-tabHome.addEventListener('click', () => {
+leftTabBtn.addEventListener('click', () => {
     if (floatingTabBar.classList.contains('search-expanded')) {
         collapseSearchCapsule();
     }
-    switchView('home');
-});
-
-tabSettings.addEventListener('click', () => {
-    if (floatingTabBar.classList.contains('search-expanded')) {
-        collapseSearchCapsule();
+    
+    // Toggle between Home and Settings based on current state
+    if (currentMode === 'home') {
+        switchView('settings');
+        currentMode = 'settings';
+        leftTabIcon.src = 'assets/settings.png';
+        leftTabLabel.textContent = 'Settings';
+    } else {
+        switchView('home');
+        currentMode = 'home';
+        leftTabIcon.src = 'assets/home.png';
+        leftTabLabel.textContent = 'Home';
     }
-    switchView('settings');
 });
 
 // Step 1: Initial tap on search container expands the search bar WITHOUT opening keyboard
@@ -68,18 +76,13 @@ function expandSearchBarOnly() {
     floatingTabBar.classList.add('search-expanded');
     searchInputWrapper.classList.remove('hidden');
     switchView('search');
-
     searchTriggerBtn.classList.add('active');
 
-    // Change left capsule tab from Settings to Home when in search mode
-    const tabIcon = tabHome.querySelector('.tab-icon');
-    const tabLabel = tabHome.querySelector('.tab-label');
-    if (tabIcon) tabIcon.src = 'assets/home.png';
-    if (tabLabel) tabLabel.textContent = 'Home';
-    
-    tabHome.setAttribute('data-target', 'home');
-    tabHome.classList.add('active');
-    tabSettings.classList.remove('active');
+    // When search is active, left capsule displays Settings icon so user can jump to settings if they want
+    currentMode = 'settings';
+    leftTabIcon.src = 'assets/settings.png';
+    leftTabLabel.textContent = 'Settings';
+    leftTabBtn.classList.remove('active');
 }
 
 function activateKeyboardState() {
@@ -102,17 +105,19 @@ function collapseSearchCapsule() {
     lyricsSection.classList.add('hidden');
     searchInput.value = '';
     searchInput.blur();
+    
+    // Reset back to Home mode
     switchView('home');
+    currentMode = 'home';
+    leftTabIcon.src = 'assets/home.png';
+    leftTabLabel.textContent = 'Home';
+    leftTabBtn.classList.add('active');
 }
 
 function switchView(targetView) {
     if (targetView === 'home') {
-        tabHome.classList.add('active');
-        tabSettings.classList.remove('active');
         headerSubtitle.textContent = "Welcome to your personal music lyric hub";
     } else if (targetView === 'settings') {
-        tabSettings.classList.add('active');
-        tabHome.classList.remove('active');
         headerSubtitle.textContent = "Customize your Liquid Glass experience";
     } else if (targetView === 'search') {
         headerSubtitle.textContent = "Query global music catalogs instantly";
