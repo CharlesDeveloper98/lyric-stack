@@ -288,6 +288,6 @@ const preferenceSectionContainer = document.getElementById('preference-section-c
 if (preferenceTabTrigger && preferenceSectionContainer) {
     preferenceTabTrigger.addEventListener('click', () => {
         preferenceSectionContainer.classList.toggle('collapsed');
-        preferenceTabTrigger.parentElement.classList.toggle('collapsed');
+        preferenceTabTrigger.closest('.preference-tab-wrapper-card').classList.toggle('collapsed');
     });
 }
