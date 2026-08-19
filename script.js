@@ -8,10 +8,8 @@ const headerSubtitle = document.getElementById('header-subtitle');
 
 // Navigation & Morphing Capsule Elements
 const floatingTabBar = document.getElementById('floating-tab-bar');
-const leftCapsule = document.getElementById('left-capsule');
-const leftTabBtn = document.getElementById('left-tab-btn');
-const leftTabIcon = document.getElementById('left-tab-icon');
-const leftTabLabel = document.getElementById('left-tab-label');
+const homeTabBtn = document.getElementById('home-tab-btn');
+const settingsTabBtn = document.getElementById('settings-tab-btn');
 
 const searchTriggerBtn = document.getElementById('search-trigger-btn');
 const searchInputWrapper = document.getElementById('search-input-wrapper');
@@ -34,31 +32,38 @@ const themeButtons = document.querySelectorAll('.theme-btn');
 const bodyElement = document.body;
 
 let searchTimeout = null;
-let currentMode = 'settings'; // Starts with 'settings' icon on Home view
 
 // Ensure lyrics starts hidden
 lyricsSection.classList.add('hidden');
 
-// --- Navigation & Fluid Animation Handler ---
+// --- Navigation Tab Handlers ---
 
-leftTabBtn.addEventListener('click', () => {
+homeTabBtn.addEventListener('click', () => {
     if (floatingTabBar.classList.contains('search-expanded')) {
         collapseSearchCapsule();
     }
-    
-    // Toggle between Settings and Home views
-    if (currentMode === 'settings') {
-        switchView('settings');
-        currentMode = 'home';
-        leftTabIcon.src = 'assets/home.png';
-        leftTabLabel.textContent = 'Home';
-    } else {
-        switchView('home');
-        currentMode = 'settings';
-        leftTabIcon.src = 'assets/settings.png';
-        leftTabLabel.textContent = 'Settings';
-    }
+    switchTab('home');
 });
+
+settingsTabBtn.addEventListener('click', () => {
+    if (floatingTabBar.classList.contains('search-expanded')) {
+        collapseSearchCapsule();
+    }
+    switchTab('settings');
+});
+
+function switchTab(target) {
+    homeTabBtn.classList.remove('active');
+    settingsTabBtn.classList.remove('active');
+
+    if (target === 'home') {
+        homeTabBtn.classList.add('active');
+        switchView('home');
+    } else if (target === 'settings') {
+        settingsTabBtn.classList.add('active');
+        switchView('settings');
+    }
+}
 
 // Step 1: Initial tap on search container expands the search bar WITHOUT opening keyboard
 searchTriggerBtn.addEventListener('click', (e) => {
@@ -66,7 +71,7 @@ searchTriggerBtn.addEventListener('click', (e) => {
     expandSearchBarOnly();
 });
 
-// Step 2: Tapping directly inside the search input opens the keyboard and shows the "X" exit button
+// Step 2: Tapping directly inside the search input opens keyboard and shows exit button
 searchInput.addEventListener('click', (e) => {
     e.stopPropagation();
     activateKeyboardState();
@@ -78,11 +83,9 @@ function expandSearchBarOnly() {
     switchView('search');
     searchTriggerBtn.classList.add('active');
 
-    // When search is active, left capsule switches to display Home icon
-    currentMode = 'home';
-    leftTabIcon.src = 'assets/home.png';
-    leftTabLabel.textContent = 'Home';
-    leftTabBtn.classList.remove('active');
+    // Deselect left capsule tabs when search is open
+    homeTabBtn.classList.remove('active');
+    settingsTabBtn.classList.remove('active');
 }
 
 function activateKeyboardState() {
@@ -106,12 +109,8 @@ function collapseSearchCapsule() {
     searchInput.value = '';
     searchInput.blur();
     
-    // Reset back to Home view where left capsule shows Settings icon
-    switchView('home');
-    currentMode = 'settings';
-    leftTabIcon.src = 'assets/settings.png';
-    leftTabLabel.textContent = 'Settings';
-    leftTabBtn.classList.remove('active');
+    // Return to Home tab active state
+    switchTab('home');
 }
 
 function switchView(targetView) {
