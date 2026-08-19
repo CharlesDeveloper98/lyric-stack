@@ -8,12 +8,14 @@ const headerSubtitle = document.getElementById('header-subtitle');
 
 // Navigation & Morphing Capsule Elements
 const floatingTabBar = document.getElementById('floating-tab-bar');
+const leftCapsule = document.getElementById('left-capsule');
 const tabHome = document.getElementById('tab-home');
 const tabSettings = document.getElementById('tab-settings');
 const searchTriggerBtn = document.getElementById('search-trigger-btn');
 const searchInputWrapper = document.getElementById('search-input-wrapper');
 const searchInput = document.getElementById('search-input');
 const micBtn = document.getElementById('mic-btn');
+const closeSearchBtn = document.getElementById('close-search-btn');
 
 // Search & Lyrics Elements
 const resultsSection = document.getElementById('results-section');
@@ -50,32 +52,57 @@ tabSettings.addEventListener('click', () => {
     switchView('settings');
 });
 
+// Step 1: Initial tap on search container expands the search bar WITHOUT opening keyboard
 searchTriggerBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    expandSearchCapsule();
+    expandSearchBarOnly();
 });
 
-function expandSearchCapsule() {
+// Step 2: Tapping directly inside the search input opens the keyboard, removes left capsule, and shows the "X" exit button
+searchInput.addEventListener('click', (e) => {
+    e.stopPropagation();
+    activateKeyboardState();
+});
+
+function expandSearchBarOnly() {
     floatingTabBar.classList.add('search-expanded');
     searchInputWrapper.classList.remove('hidden');
     switchView('search');
 
-    tabHome.classList.remove('active');
-    tabSettings.classList.remove('active');
     searchTriggerBtn.classList.add('active');
 
-    // Removed auto-focus to prevent keyboard from popping up automatically.
-    // The keyboard will now only trigger when the user explicitly taps inside the input field.
+    // Change left capsule tab from Settings to Home when in search mode
+    const tabIcon = tabHome.querySelector('.tab-icon');
+    const tabLabel = tabHome.querySelector('.tab-label');
+    if (tabIcon) tabIcon.src = 'assets/home.png';
+    if (tabLabel) tabLabel.textContent = 'Home';
+    
+    tabHome.setAttribute('data-target', 'home');
+    tabHome.classList.add('active');
+    tabSettings.classList.remove('active');
 }
 
+function activateKeyboardState() {
+    floatingTabBar.classList.add('keyboard-active');
+    closeSearchBtn.classList.remove('hidden');
+}
+
+// Exit search / keyboard view via "X" button
+closeSearchBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    collapseSearchCapsule();
+});
+
 function collapseSearchCapsule() {
-    floatingTabBar.classList.remove('search-expanded');
+    floatingTabBar.classList.remove('search-expanded', 'keyboard-active');
     searchInputWrapper.classList.add('hidden');
+    closeSearchBtn.classList.add('hidden');
     searchTriggerBtn.classList.remove('active');
     resultsSection.classList.add('hidden');
     lyricsSection.classList.add('hidden');
     searchInput.value = '';
     searchInput.blur();
+    switchView('home');
 }
 
 function switchView(targetView) {
@@ -104,6 +131,7 @@ function switchView(targetView) {
 if (micBtn) {
     micBtn.addEventListener('click', () => {
         searchInput.focus();
+        activateKeyboardState();
     });
 }
 
