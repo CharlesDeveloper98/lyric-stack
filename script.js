@@ -14,7 +14,6 @@ const searchTriggerBtn = document.getElementById('search-trigger-btn');
 const searchInputWrapper = document.getElementById('search-input-wrapper');
 const searchInput = document.getElementById('search-input');
 const micBtn = document.getElementById('mic-btn');
-const searchCloseBtn = document.getElementById('search-close-btn');
 
 // Search & Lyrics Elements
 const resultsSection = document.getElementById('results-section');
@@ -64,6 +63,9 @@ function expandSearchCapsule() {
     tabHome.classList.remove('active');
     tabSettings.classList.remove('active');
     searchTriggerBtn.classList.add('active');
+
+    // Removed auto-focus to prevent keyboard from popping up automatically.
+    // The keyboard will now only trigger when the user explicitly taps inside the input field.
 }
 
 function collapseSearchCapsule() {
@@ -74,24 +76,7 @@ function collapseSearchCapsule() {
     lyricsSection.classList.add('hidden');
     searchInput.value = '';
     searchInput.blur();
-    
-    // Reset buttons view state
-    micBtn.classList.remove('hidden');
-    searchCloseBtn.classList.add('hidden');
-    switchView('home');
 }
-
-// Keyboard focus states: Swap Microphone icon with "X" container button when typing/active
-searchInput.addEventListener('focus', () => {
-    micBtn.classList.add('hidden');
-    searchCloseBtn.classList.remove('hidden');
-});
-
-// Close/Exit Search container action (triggers when tapping the "X" button)
-searchCloseBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    collapseSearchCapsule();
-});
 
 function switchView(targetView) {
     if (targetView === 'home') {
@@ -263,10 +248,13 @@ function escapeHTML(str) {
     );
 }
 
+
+
 // --- Dynamic Ambient Mesh Toggle Logic with Persistence ---
 const ambientMeshToggle = document.getElementById('ambient-mesh-toggle');
 const meshBgElement = document.querySelector('.mesh-bg');
 
+// 1. Check saved preference on app load (Default is OFF if nothing is saved)
 const savedMeshState = localStorage.getItem('lyricspot_ambient_mesh');
 
 if (savedMeshState === 'enabled') {
@@ -277,6 +265,7 @@ if (savedMeshState === 'enabled') {
     if (meshBgElement) meshBgElement.classList.remove('mesh-animated');
 }
 
+// 2. Listen for changes and save user preference to localStorage
 if (ambientMeshToggle && meshBgElement) {
     ambientMeshToggle.addEventListener('change', (e) => {
         if (e.target.checked) {
