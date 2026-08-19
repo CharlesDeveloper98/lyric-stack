@@ -43,22 +43,29 @@
         <div id="results-content" class="results-body"></div>
     </div>
 
-                <!-- Lyrics Display View Card -->
-                <section id="lyrics-section" class="glass-card lyrics-card hidden">
-                    <div class="lyrics-header">
-                        <div>
-                            <span id="lyrics-artist-tag" class="artist-tag">Artist</span>
-                            <h3 id="lyrics-title">Song Title</h3>
-                        </div>
-                        <div class="lyrics-actions">
-                            <button id="fullscreen-lyrics-btn" class="text-action-btn" title="Toggle full screen">See full lyrics...</button>
-                            <button id="close-lyrics" class="icon-btn">&times;</button>
-                        </div>
-                    </div>
-                    <div id="lyrics-content" class="lyrics-body">
-                        <p class="placeholder-text">Loading lyrics vector...</p>
-                    </div>
-                </section>
+               <!-- Lyrics Display View Card -->
+<section id="lyrics-section" class="glass-card lyrics-card hidden">
+    <div class="lyrics-header">
+        <div class="lyrics-header-left">
+            <!-- Liquid Glass Back Chevron Button -->
+            <button id="back-to-results-btn" class="liquid-back-btn" title="Back to results">
+                <svg class="chevron-icon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <div class="lyrics-titles-group">
+                <span id="lyrics-artist-tag" class="artist-tag">Artist</span>
+                <h3 id="lyrics-title">Song Title</h3>
+            </div>
+        </div>
+        <div class="lyrics-actions">
+            <!-- See full lyrics inside a liquid glass container -->
+            <button id="fullscreen-lyrics-btn" class="liquid-action-pill" title="Toggle full screen">See full lyrics...</button>
+        </div>
+    </div>
+    <div id="lyrics-content" class="lyrics-body">
+        <p class="placeholder-text">Loading lyrics vector...</p>
+    </div>
+</section>
+
             </div>
 
                         <!-- Settings View -->
@@ -123,14 +130,15 @@
                 <span class="tab-label">Search</span>
             </button>
 
-            <!-- Expanded Search Bar Content -->
-            <div class="search-input-wrapper hidden" id="search-input-wrapper">
-                <img src="assets/search.png" alt="Search" class="search-inline-icon">
-                <input type="text" id="search-input" placeholder="Artists, Songs, Lyrics..." autocomplete="off">
-                <button id="mic-btn" class="mic-btn" title="Voice Search">
-                    <img src="assets/microphone.png" alt="Microphone" class="mic-icon">
-                </button>
-            </div>
+            <!-- Search Input Wrapper (Inside right-capsule) -->
+<div class="search-input-wrapper hidden" id="search-input-wrapper">
+    <img src="assets/search.png" alt="Search" class="search-inline-icon">
+    <input type="text" id="search-input" placeholder="Artists, Songs, Lyrics..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
+    <button id="mic-btn" class="mic-btn" title="Voice Search">
+        <img src="assets/microphone.png" alt="Microphone" class="mic-icon">
+    </button>
+</div>
+
         </div>
     </nav>
 
