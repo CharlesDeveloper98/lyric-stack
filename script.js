@@ -34,7 +34,7 @@ const themeButtons = document.querySelectorAll('.theme-btn');
 const bodyElement = document.body;
 
 let searchTimeout = null;
-let currentMode = 'home'; // Tracks whether left capsule is 'home' or 'settings'
+let currentMode = 'settings'; // Starts with 'settings' icon on Home view
 
 // Ensure lyrics starts hidden
 lyricsSection.classList.add('hidden');
@@ -46,17 +46,17 @@ leftTabBtn.addEventListener('click', () => {
         collapseSearchCapsule();
     }
     
-    // Toggle between Home and Settings based on current state
-    if (currentMode === 'home') {
+    // Toggle between Settings and Home views
+    if (currentMode === 'settings') {
         switchView('settings');
-        currentMode = 'settings';
-        leftTabIcon.src = 'assets/settings.png';
-        leftTabLabel.textContent = 'Settings';
-    } else {
-        switchView('home');
         currentMode = 'home';
         leftTabIcon.src = 'assets/home.png';
         leftTabLabel.textContent = 'Home';
+    } else {
+        switchView('home');
+        currentMode = 'settings';
+        leftTabIcon.src = 'assets/settings.png';
+        leftTabLabel.textContent = 'Settings';
     }
 });
 
@@ -66,7 +66,7 @@ searchTriggerBtn.addEventListener('click', (e) => {
     expandSearchBarOnly();
 });
 
-// Step 2: Tapping directly inside the search input opens the keyboard, removes left capsule, and shows the "X" exit button
+// Step 2: Tapping directly inside the search input opens the keyboard and shows the "X" exit button
 searchInput.addEventListener('click', (e) => {
     e.stopPropagation();
     activateKeyboardState();
@@ -78,10 +78,10 @@ function expandSearchBarOnly() {
     switchView('search');
     searchTriggerBtn.classList.add('active');
 
-    // When search is active, left capsule displays Settings icon so user can jump to settings if they want
-    currentMode = 'settings';
-    leftTabIcon.src = 'assets/settings.png';
-    leftTabLabel.textContent = 'Settings';
+    // When search is active, left capsule switches to display Home icon
+    currentMode = 'home';
+    leftTabIcon.src = 'assets/home.png';
+    leftTabLabel.textContent = 'Home';
     leftTabBtn.classList.remove('active');
 }
 
@@ -106,17 +106,17 @@ function collapseSearchCapsule() {
     searchInput.value = '';
     searchInput.blur();
     
-    // Reset back to Home mode
+    // Reset back to Home view where left capsule shows Settings icon
     switchView('home');
-    currentMode = 'home';
-    leftTabIcon.src = 'assets/home.png';
-    leftTabLabel.textContent = 'Home';
-    leftTabBtn.classList.add('active');
+    currentMode = 'settings';
+    leftTabIcon.src = 'assets/settings.png';
+    leftTabLabel.textContent = 'Settings';
+    leftTabBtn.classList.remove('active');
 }
 
 function switchView(targetView) {
     if (targetView === 'home') {
-        headerSubtitle.textContent = "Welcome to your personal music lyric hub";
+        headerSubtitle.textContent = "Query global music catalogs instantly";
     } else if (targetView === 'settings') {
         headerSubtitle.textContent = "Customize your Liquid Glass experience";
     } else if (targetView === 'search') {
