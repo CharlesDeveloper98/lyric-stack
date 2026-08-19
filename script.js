@@ -165,30 +165,24 @@ fullscreenLyricsBtn.addEventListener('click', () => {
 
 
 
-const resultsCountTitle = document.getElementById('results-count-title'); // Add this to your top element constants
-
 async function performMusicSearch(query) {
     resultsSection.classList.remove('hidden');
-    resultsCountTitle.textContent = `Searching catalogs...`;
-    resultsContent.innerHTML = `<p class="placeholder-text">Looking up lyrics vector...</p>`;
+    resultsContent.innerHTML = `<p class="placeholder-text">Searching wide music catalogs...</p>`;
 
     try {
         const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=25`);
         const data = await response.json();
 
         if (data.results && data.results.length > 0) {
-            // Update title to accurately reflect findings for the query
-            resultsCountTitle.textContent = `${data.results.length} Results Found`;
             renderSongList(data.results);
         } else {
-            resultsCountTitle.textContent = `0 Results Found`;
             resultsContent.innerHTML = `<p class="placeholder-text">No tracks found matching "${query}"</p>`;
         }
     } catch (err) {
-        resultsCountTitle.textContent = `Error`;
         resultsContent.innerHTML = `<p class="placeholder-text">Network connection error.</p>`;
     }
 }
+
 
 
 function renderSongList(tracks) {
