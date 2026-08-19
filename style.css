@@ -436,15 +436,18 @@ body {
     transform: scale(1.1);
 }
 
-/* Keyboard Active State: Hide left capsule completely, extend search bar, show "X" container */
-.floating-tab-bar.keyboard-active .left-capsule {
+/* Search Expanded / Keyboard Active State: Hide Home tab, keep only Settings tab on the left capsule */
+.floating-tab-bar.search-expanded #home-tab-btn {
     width: 0;
     padding: 0;
     margin: 0;
     opacity: 0;
-    border: none;
     overflow: hidden;
     pointer-events: none;
+}
+
+.floating-tab-bar.search-expanded .left-capsule {
+    padding: 6px; /* Keeps single circular/compact pill shape for Settings */
 }
 
 .floating-tab-bar.keyboard-active .right-capsule {
