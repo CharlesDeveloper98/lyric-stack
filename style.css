@@ -27,9 +27,10 @@ body {
     overflow-x: hidden;
     position: relative;
     padding: 20px;
+    padding-bottom: 100px;
 }
 
-/* Liquid Glass Mesh Background (Apple Music Vibe) */
+/* Mesh Background Accents */
 .mesh-bg {
     position: absolute;
     width: 100vw;
@@ -47,7 +48,7 @@ body {
     animation: floatBlob 18s infinite alternate cubic-bezier(0.37, 0, 0.63, 1);
 }
 
-.blob-1 { width: 450px; height: 450px; background: #fa233b; top: -10%; left: -10%; } /* Apple Music Red */
+.blob-1 { width: 450px; height: 450px; background: #fa233b; top: -10%; left: -10%; }
 .blob-2 { width: 500px; height: 500px; background: #2b580c; bottom: -15%; right: -10%; animation-delay: -4s; }
 .blob-3 { width: 400px; height: 400px; background: #007aff; top: 35%; left: 25%; animation-delay: -8s; }
 
@@ -65,7 +66,6 @@ body {
     z-index: 1;
 }
 
-/* Header */
 .app-header {
     text-align: center;
     display: flex;
@@ -106,37 +106,43 @@ body {
     color: var(--text-secondary);
 }
 
-/* Liquid Glass Search Container */
-.glass-search-box {
+/* Views Management */
+.app-view.hidden { display: none; }
+
+.glass-card {
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
     backdrop-filter: blur(40px) saturate(200%);
     -webkit-backdrop-filter: blur(40px) saturate(200%);
+    border-radius: 28px;
+    box-shadow: var(--card-shadow);
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.welcome-card h2 { font-size: 20px; margin-bottom: 10px; }
+.welcome-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+
+/* Search Box */
+.glass-search-box {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(40px) saturate(200%);
     border-radius: 24px;
     box-shadow: var(--card-shadow);
     padding: 14px 18px;
     display: flex;
     align-items: center;
     gap: 12px;
-    position: relative;
-    transition: border-color 0.3s, box-shadow 0.3s;
+    margin-bottom: 15px;
 }
 
-.glass-search-box::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; height: 1px;
-    background: linear-gradient(90deg, transparent, var(--glass-highlight), transparent);
-}
-
-.glass-search-box:focus-within {
-    border-color: var(--glass-highlight);
-    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 var(--glass-highlight);
-}
-
-.search-icon {
-    color: var(--text-secondary);
-    flex-shrink: 0;
+.tab-icon-inline {
+    width: 20px;
+    height: 20px;
+    opacity: 0.6;
+    filter: invert(1);
 }
 
 #search-input {
@@ -147,10 +153,7 @@ body {
     font-size: 16px;
     width: 100%;
 }
-
-#search-input::placeholder {
-    color: var(--text-secondary);
-}
+#search-input::placeholder { color: var(--text-secondary); }
 
 .clear-btn {
     background: rgba(255, 255, 255, 0.1);
@@ -165,24 +168,9 @@ body {
     align-items: center;
     justify-content: center;
 }
-
 .clear-btn.hidden { display: none; }
 
-/* Glass Cards (Results & Lyrics Panels) */
-.glass-card {
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    backdrop-filter: blur(40px) saturate(200%);
-    -webkit-backdrop-filter: blur(40px) saturate(200%);
-    border-radius: 28px;
-    box-shadow: var(--card-shadow);
-    padding: 20px;
-    position: relative;
-    overflow: hidden;
-}
-
-.glass-card.hidden { display: none; }
-
+/* Results & Lyrics Panels */
 .results-header, .lyrics-header {
     display: flex;
     justify-content: space-between;
@@ -192,19 +180,8 @@ body {
     padding-bottom: 10px;
 }
 
-.results-header h3, .lyrics-header h3 {
-    font-size: 16px;
-    font-weight: 600;
-}
-
-.artist-tag {
-    font-size: 11px;
-    color: #fa233b;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    display: block;
-}
+.results-header h3, .lyrics-header h3 { font-size: 16px; font-weight: 600; }
+.artist-tag { font-size: 11px; color: #fa233b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; display: block; }
 
 .icon-btn {
     background: none;
@@ -213,13 +190,11 @@ body {
     font-size: 22px;
     cursor: pointer;
     opacity: 0.7;
-    transition: opacity 0.2s;
 }
 .icon-btn:hover { opacity: 1; }
 
-/* Song List Items */
 .results-body, .lyrics-body {
-    max-height: 360px;
+    max-height: 340px;
     overflow-y: auto;
     padding-right: 4px;
 }
@@ -233,10 +208,7 @@ body {
     cursor: pointer;
     transition: background 0.2s;
 }
-
-.song-item:hover {
-    background: rgba(255, 255, 255, 0.08);
-}
+.song-item:hover { background: rgba(255, 255, 255, 0.08); }
 
 .song-thumb {
     width: 44px;
@@ -246,31 +218,95 @@ body {
     flex-shrink: 0;
 }
 
-.song-meta h4 {
-    font-size: 14px;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 280px;
-}
+.song-meta h4 { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+.song-meta p { font-size: 12px; color: var(--text-secondary); }
 
-.song-meta p {
-    font-size: 12px;
-    color: var(--text-secondary);
-}
-
-/* Lyrics Body */
 .lyrics-body {
     font-size: 15px;
     line-height: 1.7;
     color: var(--text-secondary);
     white-space: pre-line;
 }
+.placeholder-text { text-align: center; padding: 30px 0; font-style: italic; color: var(--text-secondary); }
 
-.placeholder-text {
-    text-align: center;
-    padding: 30px 0;
-    font-style: italic;
+/* Settings View Styles */
+.settings-card h3 { font-size: 18px; margin-bottom: 16px; }
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--glass-border);
+    font-size: 14px;
+}
+.setting-badge {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 4px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* iOS 26 Floating Liquid Glass Bottom Navigation */
+.floating-tab-bar {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    z-index: 100;
+}
+
+.tab-capsule {
+    background: rgba(20, 20, 25, 0.65);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(40px) saturate(200%);
+    -webkit-backdrop-filter: blur(40px) saturate(200%);
+    border-radius: 32px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    padding: 6px;
+    gap: 4px;
+}
+
+.tab-item {
+    background: none;
+    border: none;
+    outline: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 14px;
+    border-radius: 24px;
+    cursor: pointer;
     color: var(--text-secondary);
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.tab-icon {
+    width: 22px;
+    height: 22px;
+    filter: invert(0.6);
+    transition: filter 0.3s, transform 0.3s;
+    margin-bottom: 2px;
+}
+
+.tab-item span {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+}
+
+.tab-item.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--text-primary);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+.tab-item.active .tab-icon {
+    filter: invert(1);
+    transform: scale(1.05);
 }
