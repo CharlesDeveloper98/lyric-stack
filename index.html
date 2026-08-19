@@ -48,6 +48,20 @@
                     </div>
                     <div id="results-content" class="results-body"></div>
                 </div>
+
+                <!-- Lyrics Display View Modal (Scanned strictly inside Search View) -->
+                <section id="lyrics-section" class="glass-card lyrics-card hidden">
+                    <div class="lyrics-header">
+                        <div>
+                            <span id="lyrics-artist-tag" class="artist-tag">Artist</span>
+                            <h3 id="lyrics-title">Song Title</h3>
+                        </div>
+                        <button id="close-lyrics" class="icon-btn">&times;</button>
+                    </div>
+                    <div id="lyrics-content" class="lyrics-body">
+                        <p class="placeholder-text">Loading lyrics vector...</p>
+                    </div>
+                </section>
             </div>
 
             <!-- Settings View -->
@@ -73,20 +87,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </section>
-
-        <!-- Lyrics Display View Modal (Hidden by default) -->
-        <section id="lyrics-section" class="glass-card lyrics-card hidden">
-            <div class="lyrics-header">
-                <div>
-                    <span id="lyrics-artist-tag" class="artist-tag">Artist</span>
-                    <h3 id="lyrics-title">Song Title</h3>
-                </div>
-                <button id="close-lyrics" class="icon-btn">&times;</button>
-            </div>
-            <div id="lyrics-content" class="lyrics-body">
-                <p class="placeholder-text">Loading lyrics vector...</p>
             </div>
         </section>
     </main>
