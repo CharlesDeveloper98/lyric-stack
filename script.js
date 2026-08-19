@@ -1,3 +1,4 @@
+// Dynamic Views Elements
 const views = {
     home: document.getElementById('home-view'),
     search: document.getElementById('search-view'),
@@ -5,16 +6,16 @@ const views = {
 };
 const headerSubtitle = document.getElementById('header-subtitle');
 
+// Navigation & Morphing Capsule Elements
 const floatingTabBar = document.getElementById('floating-tab-bar');
-const homeTabBtn = document.getElementById('home-tab-btn');
-const settingsTabBtn = document.getElementById('settings-tab-btn');
-
+const tabHome = document.getElementById('tab-home');
+const tabSettings = document.getElementById('tab-settings');
 const searchTriggerBtn = document.getElementById('search-trigger-btn');
 const searchInputWrapper = document.getElementById('search-input-wrapper');
 const searchInput = document.getElementById('search-input');
 const micBtn = document.getElementById('mic-btn');
-const closeSearchBtn = document.getElementById('close-search-btn');
 
+// Search & Lyrics Elements
 const resultsSection = document.getElementById('results-section');
 const resultsContent = document.getElementById('results-content');
 const lyricsSection = document.getElementById('lyrics-section');
@@ -24,83 +25,67 @@ const lyricsArtistTag = document.getElementById('lyrics-artist-tag');
 const closeLyricsBtn = document.getElementById('close-lyrics');
 const fullscreenLyricsBtn = document.getElementById('fullscreen-lyrics-btn');
 
+// Theme Elements
 const themeButtons = document.querySelectorAll('.theme-btn');
 const bodyElement = document.body;
 
 let searchTimeout = null;
+
+// Ensure lyrics starts hidden
 lyricsSection.classList.add('hidden');
 
-homeTabBtn.addEventListener('click', () => {
+// --- Navigation & Fluid Animation Handler ---
+
+tabHome.addEventListener('click', () => {
     if (floatingTabBar.classList.contains('search-expanded')) {
         collapseSearchCapsule();
     }
-    switchTab('home');
+    switchView('home');
 });
 
-settingsTabBtn.addEventListener('click', () => {
+tabSettings.addEventListener('click', () => {
     if (floatingTabBar.classList.contains('search-expanded')) {
         collapseSearchCapsule();
     }
-    switchTab('settings');
+    switchView('settings');
 });
-
-function switchTab(target) {
-    homeTabBtn.classList.remove('active');
-    settingsTabBtn.classList.remove('active');
-
-    if (target === 'home') {
-        homeTabBtn.classList.add('active');
-        switchView('home');
-    } else if (target === 'settings') {
-        settingsTabBtn.classList.add('active');
-        switchView('settings');
-    }
-}
 
 searchTriggerBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    expandSearchBar();
+    expandSearchCapsule();
 });
 
-searchInput.addEventListener('click', (e) => {
-    e.stopPropagation();
-});
-
-function expandSearchBar() {
+function expandSearchCapsule() {
     floatingTabBar.classList.add('search-expanded');
     searchInputWrapper.classList.remove('hidden');
-    closeSearchBtn.classList.remove('hidden');
     switchView('search');
+
+    tabHome.classList.remove('active');
+    tabSettings.classList.remove('active');
     searchTriggerBtn.classList.add('active');
 
-    // Left capsule shows ONLY Settings
-    homeTabBtn.classList.remove('active');
-    settingsTabBtn.classList.add('active');
-    searchInput.focus();
+    // Removed auto-focus to prevent keyboard from popping up automatically.
+    // The keyboard will now only trigger when the user explicitly taps inside the input field.
 }
-
-closeSearchBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    collapseSearchCapsule();
-});
 
 function collapseSearchCapsule() {
     floatingTabBar.classList.remove('search-expanded');
     searchInputWrapper.classList.add('hidden');
-    closeSearchBtn.classList.add('hidden');
     searchTriggerBtn.classList.remove('active');
     resultsSection.classList.add('hidden');
     lyricsSection.classList.add('hidden');
     searchInput.value = '';
     searchInput.blur();
-    
-    switchTab('home');
 }
 
 function switchView(targetView) {
     if (targetView === 'home') {
-        headerSubtitle.textContent = "Query global music catalogs instantly";
+        tabHome.classList.add('active');
+        tabSettings.classList.remove('active');
+        headerSubtitle.textContent = "Welcome to your personal music lyric hub";
     } else if (targetView === 'settings') {
+        tabSettings.classList.add('active');
+        tabHome.classList.remove('active');
         headerSubtitle.textContent = "Customize your Liquid Glass experience";
     } else if (targetView === 'search') {
         headerSubtitle.textContent = "Query global music catalogs instantly";
@@ -115,14 +100,17 @@ function switchView(targetView) {
     });
 }
 
+// Microphone action handler
 if (micBtn) {
     micBtn.addEventListener('click', () => {
         searchInput.focus();
     });
 }
 
+// --- Theme Switcher ---
 function applyTheme(themeMode) {
     bodyElement.classList.remove('light-theme', 'dark-theme');
+    
     if (themeMode === 'light') {
         bodyElement.classList.add('light-theme');
     } else if (themeMode === 'dark') {
@@ -141,12 +129,15 @@ themeButtons.forEach(btn => {
     btn.addEventListener('click', () => {
         themeButtons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        applyTheme(btn.getAttribute('data-theme'));
+
+        const selectedTheme = btn.getAttribute('data-theme');
+        applyTheme(selectedTheme);
     });
 });
 
 applyTheme('system');
 
+// --- Search & Lyrics Logic ---
 searchInput.addEventListener('input', (e) => {
     const query = e.target.value.trim();
     if (query.length === 0) {
