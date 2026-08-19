@@ -18,7 +18,14 @@ const lyricsTitle = document.getElementById('lyrics-title');
 const lyricsArtistTag = document.getElementById('lyrics-artist-tag');
 const closeLyricsBtn = document.getElementById('close-lyrics');
 
+// Theme Switcher Elements
+const themeButtons = document.querySelectorAll('.theme-btn');
+const bodyElement = document.body;
+
 let searchTimeout = null;
+
+// Ensure lyrics section starts completely hidden on load
+lyricsSection.classList.add('hidden');
 
 // Handle Floating Bottom Tab Navigation
 tabItems.forEach(tab => {
@@ -41,14 +48,23 @@ tabItems.forEach(tab => {
         // Update Subtitle based on view
         if (targetView === 'home') {
             headerSubtitle.textContent = "Welcome to your personal music lyric hub";
-            lyricsSection.classList.add('hidden');
         } else if (targetView === 'search') {
             headerSubtitle.textContent = "Query global music catalogs instantly";
             searchInput.focus();
         } else if (targetView === 'settings') {
             headerSubtitle.textContent = "Customize your Liquid Glass experience";
-            lyricsSection.classList.add('hidden');
         }
+    });
+});
+
+// Theme Switcher Logic
+themeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        themeButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const selectedTheme = btn.getAttribute('data-theme');
+        bodyElement.setAttribute('data-theme', selectedTheme);
     });
 });
 
@@ -125,7 +141,7 @@ function renderSongList(tracks) {
     });
 }
 
-// 3. Fetch Full Lyrics
+// 3. Fetch Full Lyrics (Displays modal only on song selection)
 async function fetchLyrics(artist, title) {
     resultsSection.classList.add('hidden');
     lyricsSection.classList.remove('hidden');
