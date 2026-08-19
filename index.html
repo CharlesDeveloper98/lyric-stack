@@ -90,7 +90,7 @@
 
     <!-- iOS Floating Glass Bottom Tab Bar -->
     <nav class="floating-tab-bar" id="floating-tab-bar">
-        <!-- Left Capsule Container (Unified Home & Settings Tabs normally, morphs to Settings-only during search) -->
+        <!-- Left Capsule Container (Home & Settings normally; collapses to Settings-only when searching) -->
         <div class="tab-capsule left-capsule" id="left-capsule">
             <button class="tab-item active" data-target="home" id="home-tab-btn">
                 <img src="assets/home.png" alt="Home" class="tab-icon">
@@ -102,9 +102,8 @@
             </button>
         </div>
 
-        <!-- Right Capsule Container (Search Capsule -> Expands to Bar with X Close Button) -->
+        <!-- Right Capsule Container (Search -> Expands to Bar) -->
         <div class="tab-capsule right-capsule" id="right-capsule">
-            <!-- Normal Search Button -->
             <button class="tab-item search-trigger-btn" data-target="search" id="search-trigger-btn">
                 <img src="assets/search.png" alt="Search" class="tab-icon">
                 <span class="tab-label">Search</span>
@@ -120,7 +119,7 @@
             </div>
         </div>
 
-        <!-- iOS Exit "X" Container (Appears when search & keyboard are active) -->
+        <!-- iOS Exit "X" Container (Appears on the far right when search is active) -->
         <button class="close-capsule-btn hidden" id="close-search-btn" title="Exit Search">
             <span class="close-x-icon">&times;</span>
         </button>
