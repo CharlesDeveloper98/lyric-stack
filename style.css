@@ -10,7 +10,6 @@
     --capsule-shadow: 0 15px 35px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.6);
     --icon-filter: invert(0);
     --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
-    /* Spring Bouncy Liquid Transition Curve */
     --ios-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -50,7 +49,7 @@ body {
     justify-content: center;
     align-items: center;
     overflow-x: hidden;
-    position: fixed; /* Prevents whole-page upward scrolling when keyboard triggers */
+    position: fixed;
     width: 100vw;
     height: 100vh;
     padding: 20px;
@@ -162,7 +161,6 @@ body {
 .welcome-card h2 { font-size: 20px; margin-bottom: 10px; }
 .welcome-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
 
-/* Results & Lyrics Panels */
 .results-header, .lyrics-header {
     display: flex;
     justify-content: space-between;
@@ -223,9 +221,7 @@ body {
     cursor: pointer;
     transition: background 0.25s var(--ios-spring);
 }
-.song-item:hover { 
-    background: var(--active-pill-bg); 
-}
+.song-item:hover { background: var(--active-pill-bg); }
 
 .song-thumb {
     width: 44px;
@@ -240,7 +236,6 @@ body {
 
 .placeholder-text { text-align: center; padding: 30px 0; font-style: italic; color: var(--text-secondary); }
 
-/* Settings View Styles */
 .settings-card h3 { font-size: 18px; margin-bottom: 16px; }
 .setting-item {
     display: flex;
@@ -377,8 +372,6 @@ body {
 }
 
 /* --- Search Expanded State Animations --- */
-
-/* 1. When search capsule expands initially */
 .floating-tab-bar.search-expanded .right-capsule {
     width: 280px;
     padding: 6px 14px;
@@ -443,7 +436,7 @@ body {
     transform: scale(1.1);
 }
 
-/* 2. Keyboard Active State: Hide left capsule completely, extend search bar, show "X" container */
+/* Keyboard Active State: Hide left capsule completely, extend search bar, show "X" container */
 .floating-tab-bar.keyboard-active .left-capsule {
     width: 0;
     padding: 0;
