@@ -2,34 +2,34 @@
     --bg-color: #08080c;
     --text-primary: rgba(255, 255, 255, 0.95);
     --text-secondary: rgba(255, 255, 255, 0.55);
-    --glass-bg: rgba(255, 255, 255, 0.07);
-    --glass-border: rgba(255, 255, 255, 0.14);
-    --glass-highlight: rgba(255, 255, 255, 0.3);
-    --card-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-    --icon-filter: invert(1);
+    --glass-bg: rgba(255, 255, 255, 0.65);
+    --glass-border: rgba(255, 255, 255, 0.4);
+    --glass-highlight: rgba(255, 255, 255, 0.8);
+    --active-pill-bg: rgba(0, 0, 0, 0.08);
+    --card-shadow: 0 30px 60px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    --capsule-shadow: 0 15px 35px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    --icon-filter: invert(0);
     --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
     --ios-spring: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 body.light-theme {
     --bg-color: #f2f2f7;
-    --text-primary: rgba(0, 0, 0, 0.95);
+    --text-primary: #000000;
     --text-secondary: rgba(0, 0, 0, 0.55);
-    --glass-bg: rgba(255, 255, 255, 0.65);
-    --glass-border: rgba(0, 0, 0, 0.08);
-    --glass-highlight: rgba(255, 255, 255, 0.8);
-    --card-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    --glass-bg: rgba(240, 243, 246, 0.75);
+    --glass-border: rgba(255, 255, 255, 0.6);
+    --active-pill-bg: rgba(0, 0, 0, 0.07);
     --icon-filter: invert(0);
 }
 
 body.dark-theme {
     --bg-color: #000000;
-    --text-primary: rgba(255, 255, 255, 0.95);
+    --text-primary: #ffffff;
     --text-secondary: rgba(255, 255, 255, 0.55);
-    --glass-bg: rgba(25, 25, 30, 0.7);
-    --glass-border: rgba(255, 255, 255, 0.12);
-    --glass-highlight: rgba(255, 255, 255, 0.25);
-    --card-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    --glass-bg: rgba(30, 30, 35, 0.75);
+    --glass-border: rgba(255, 255, 255, 0.15);
+    --active-pill-bg: rgba(255, 255, 255, 0.18);
     --icon-filter: invert(1);
 }
 
@@ -72,7 +72,7 @@ body {
 }
 
 .blob-1 { width: 450px; height: 450px; background: #fa233b; top: -10%; left: -10%; }
-.blob-2 { width: 500px; height: 500px; background: #2b580c; bottom: -15%; right: -10%; animation-delay: -4s; }
+.blob-2 { width: 500px; height: 500px; background: #8e8e93; bottom: -15%; right: -10%; animation-delay: -4s; }
 .blob-3 { width: 400px; height: 400px; background: #007aff; top: 35%; left: 25%; animation-delay: -8s; }
 
 @keyframes floatBlob {
@@ -185,11 +185,6 @@ body {
     cursor: pointer;
     padding: 4px 8px;
     border-radius: 8px;
-    transition: background 0.2s var(--ios-spring), transform 0.2s var(--ios-spring);
-}
-.text-action-btn:hover {
-    background: var(--glass-border);
-    transform: scale(1.02);
 }
 
 .icon-btn {
@@ -199,9 +194,7 @@ body {
     font-size: 22px;
     cursor: pointer;
     opacity: 0.7;
-    transition: opacity 0.2s, transform 0.2s var(--ios-spring);
 }
-.icon-btn:hover { opacity: 1; transform: scale(1.1); }
 
 .results-body, .lyrics-body {
     max-height: 280px;
@@ -216,41 +209,6 @@ body {
     white-space: pre-line;
 }
 
-#search-view #lyrics-section {
-    margin-top: 15px;
-    position: relative;
-    width: 100%;
-}
-
-.lyrics-card.fullscreen-mode {
-    position: fixed !important;
-    top: 12px !important;
-    left: 12px !important;
-    right: 12px !important;
-    bottom: 12px !important;
-    width: auto !important;
-    height: auto !important;
-    max-width: none !important;
-    max-height: none !important;
-    border-radius: 28px !important;
-    z-index: 9999 !important;
-    padding: 24px 20px !important;
-    display: flex;
-    flex-direction: column;
-    animation: iOSZoomModal 0.45s var(--ios-spring) forwards;
-}
-
-@keyframes iOSZoomModal {
-    0% { opacity: 0; transform: scale(0.92) translateY(20px); }
-    100% { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-.lyrics-card.fullscreen-mode .lyrics-body {
-    max-height: calc(100vh - 130px) !important;
-    font-size: 17px;
-    line-height: 1.9;
-}
-
 .song-item {
     display: flex;
     align-items: center;
@@ -258,11 +216,10 @@ body {
     padding: 10px 12px;
     border-radius: 16px;
     cursor: pointer;
-    transition: background 0.25s var(--ios-spring), transform 0.25s var(--ios-spring);
+    transition: background 0.25s var(--ios-spring);
 }
 .song-item:hover { 
-    background: var(--glass-border); 
-    transform: translateX(4px);
+    background: var(--active-pill-bg); 
 }
 
 .song-thumb {
@@ -278,7 +235,7 @@ body {
 
 .placeholder-text { text-align: center; padding: 30px 0; font-style: italic; color: var(--text-secondary); }
 
-/* Settings View Styles & Theme Container */
+/* Settings View Styles */
 .settings-card h3 { font-size: 18px; margin-bottom: 16px; }
 .setting-item {
     display: flex;
@@ -289,7 +246,7 @@ body {
     font-size: 14px;
 }
 .setting-badge {
-    background: var(--glass-border);
+    background: var(--active-pill-bg);
     padding: 4px 10px;
     border-radius: 10px;
     font-size: 12px;
@@ -302,15 +259,11 @@ body {
     flex-direction: column;
     gap: 10px;
 }
-.setting-label {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-primary);
-}
+.setting-label { font-size: 14px; font-weight: 500; }
 
 .theme-segmented-control {
     display: flex;
-    background: var(--glass-border);
+    background: var(--active-pill-bg);
     padding: 4px;
     border-radius: 16px;
     gap: 4px;
@@ -330,117 +283,46 @@ body {
 }
 
 .theme-btn.active {
-    background: var(--glass-highlight);
+    background: var(--glass-bg);
     color: var(--text-primary);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     font-weight: 600;
-    transform: scale(1.02);
 }
 
-/* iOS Floating Liquid Glass Bottom Navigation & Fluid Morphing Search Capsule */
+/* --- iOS 26 Floating Tab Bar & Morphing Capsules --- */
 .floating-tab-bar {
     position: fixed;
-    bottom: 24px;
+    bottom: 28px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 12px;
+    gap: 14px;
     z-index: 100;
-    width: 90%;
-    max-width: 440px;
-    justify-content: center;
+    width: auto;
+    max-width: 420px;
     align-items: center;
+    justify-content: center;
 }
 
 .tab-capsule {
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
-    backdrop-filter: blur(40px) saturate(200%);
-    -webkit-backdrop-filter: blur(40px) saturate(200%);
-    border-radius: 32px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(45px) saturate(210%);
+    -webkit-backdrop-filter: blur(45px) saturate(210%);
+    border-radius: 40px;
+    box-shadow: var(--capsule-shadow);
     display: flex;
     align-items: center;
     padding: 6px;
     gap: 4px;
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-    will-change: transform, width, opacity;
+    transition: all 0.48s var(--ios-spring);
+    will-change: width, padding, flex;
 }
 
-/* Left Capsule Exit Transition */
-.left-capsule.slide-out-left {
-    transform: translateX(-120px) scale(0.85);
-    opacity: 0;
-    pointer-events: none;
-    width: 0 !important;
-    padding: 0 !important;
-    border-width: 0 !important;
-    margin: 0 !important;
-    overflow: hidden;
-}
-
-/* Right Capsule Search Expansion Transition */
-.right-capsule.search-capsule-container {
-    flex-grow: 1;
-    max-width: 90px;
-    justify-content: center;
-}
-
-.right-capsule.search-capsule-container.expanded-search-mode {
-    max-width: 100% !important;
-    width: 100% !important;
-    padding: 8px 16px !important;
-    border-color: var(--glass-highlight);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
-}
-
-.search-input-wrapper {
+.left-capsule {
     display: flex;
     align-items: center;
-    width: 100%;
-    gap: 10px;
-    animation: iOSFadeSlideIn 0.35s var(--ios-spring) forwards;
 }
-
-.search-input-wrapper.hidden {
-    display: none !important;
-}
-
-.tab-icon-inline {
-    width: 20px;
-    height: 20px;
-    opacity: 0.7;
-    filter: var(--icon-filter);
-    flex-shrink: 0;
-}
-
-#search-input {
-    background: none;
-    border: none;
-    outline: none;
-    color: var(--text-primary);
-    font-size: 15px;
-    width: 100%;
-}
-#search-input::placeholder { color: var(--text-secondary); }
-
-.clear-btn, .close-search-inline-btn {
-    background: var(--glass-border);
-    border: none;
-    color: var(--text-primary);
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    font-size: 14px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s var(--ios-spring);
-    flex-shrink: 0;
-}
-.clear-btn:hover, .close-search-inline-btn:hover { transform: scale(1.1); }
-.clear-btn.hidden { display: none; }
 
 .tab-item {
     background: none;
@@ -450,11 +332,12 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 6px 14px;
-    border-radius: 24px;
+    padding: 8px 18px;
+    border-radius: 32px;
     cursor: pointer;
-    color: var(--text-secondary);
-    transition: all 0.35s var(--ios-spring);
+    color: var(--text-primary);
+    transition: all 0.38s var(--ios-spring);
+    white-space: nowrap;
 }
 
 .tab-item:active {
@@ -465,24 +348,119 @@ body {
     width: 22px;
     height: 22px;
     filter: var(--icon-filter);
-    opacity: 0.6;
-    transition: opacity 0.3s, transform 0.35s var(--ios-spring);
+    opacity: 0.85;
+    transition: transform 0.35s var(--ios-spring);
     margin-bottom: 2px;
 }
 
-.tab-item span {
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.2px;
+.tab-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: -0.1px;
+    transition: all 0.35s var(--ios-spring);
 }
 
+/* Active Highlight Pill inside Left Capsule (Matches Image 1 & 2) */
 .tab-item.active {
-    background: var(--glass-border);
-    color: var(--text-primary);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
+    background: var(--active-pill-bg);
 }
 
 .tab-item.active .tab-icon {
-    opacity: 1;
-    transform: scale(1.08);
+    transform: scale(1.05);
+}
+
+/* --- Search Expanded State Animations --- */
+
+/* 1. Left Capsule collapses to ONLY Settings circular button */
+.floating-tab-bar.search-expanded .left-capsule {
+    padding: 6px;
+}
+
+.floating-tab-bar.search-expanded #tab-home {
+    max-width: 0;
+    opacity: 0;
+    padding: 0;
+    margin: 0;
+    transform: scale(0.6);
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.floating-tab-bar.search-expanded #tab-settings {
+    padding: 12px;
+    border-radius: 50%;
+    background: var(--active-pill-bg);
+}
+
+.floating-tab-bar.search-expanded #tab-settings .tab-label {
+    display: none;
+}
+
+.floating-tab-bar.search-expanded #tab-settings .tab-icon {
+    margin-bottom: 0;
+}
+
+/* 2. Right Search Capsule expands into full Input Bar */
+.floating-tab-bar.search-expanded .right-capsule {
+    flex: 1;
+    width: 280px;
+    padding: 6px 14px;
+}
+
+.floating-tab-bar.search-expanded #search-trigger-btn {
+    display: none;
+}
+
+.search-input-wrapper {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 10px;
+    animation: iOSFadeSlideIn 0.3s var(--ios-spring) forwards;
+}
+
+.search-input-wrapper.hidden {
+    display: none !important;
+}
+
+.search-inline-icon {
+    width: 18px;
+    height: 18px;
+    filter: var(--icon-filter);
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+
+#search-input {
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-size: 15px;
+    font-weight: 400;
+    width: 100%;
+}
+#search-input::placeholder { color: var(--text-secondary); }
+
+.mic-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    flex-shrink: 0;
+}
+
+.mic-icon {
+    width: 18px;
+    height: 18px;
+    filter: var(--icon-filter);
+    opacity: 0.85;
+    transition: transform 0.2s var(--ios-spring);
+}
+
+.mic-btn:hover .mic-icon {
+    transform: scale(1.1);
 }
