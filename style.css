@@ -8,6 +8,7 @@
     --card-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
     --icon-filter: invert(1);
     --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    --ios-spring: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 body.light-theme {
@@ -38,6 +39,7 @@ body.dark-theme {
     padding: 0;
     font-family: var(--font-family);
     -webkit-font-smoothing: antialiased;
+    transition: background-color 0.4s var(--ios-spring), border-color 0.4s var(--ios-spring), color 0.4s var(--ios-spring);
 }
 
 body {
@@ -51,7 +53,6 @@ body {
     position: relative;
     padding: 20px;
     padding-bottom: 100px;
-    transition: background-color 0.4s ease, color 0.4s ease;
 }
 
 .mesh-bg {
@@ -130,11 +131,11 @@ body {
 }
 
 .app-view {
-    animation: iOSFadeSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: iOSFadeSlideIn 0.45s var(--ios-spring) forwards;
 }
 
 @keyframes iOSFadeSlideIn {
-    0% { opacity: 0; transform: translateY(12px) scale(0.98); }
+    0% { opacity: 0; transform: translateY(16px) scale(0.97); }
     100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
@@ -151,7 +152,7 @@ body {
     padding: 24px;
     position: relative;
     overflow: hidden;
-    transition: background 0.4s ease, border 0.4s ease, box-shadow 0.4s ease, all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.45s var(--ios-spring);
 }
 
 .welcome-card h2 { font-size: 20px; margin-bottom: 10px; }
@@ -169,6 +170,13 @@ body {
     align-items: center;
     gap: 12px;
     margin-bottom: 15px;
+    transition: all 0.3s var(--ios-spring);
+}
+
+.glass-search-box:focus-within {
+    border-color: var(--glass-highlight);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    transform: scale(1.01);
 }
 
 .tab-icon-inline {
@@ -200,10 +208,12 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: transform 0.2s var(--ios-spring);
 }
+.clear-btn:hover { transform: scale(1.1); }
 .clear-btn.hidden { display: none; }
 
-/* Results & Standard Inline Lyrics Panel */
+/* Results & Lyrics Panels */
 .results-header, .lyrics-header {
     display: flex;
     justify-content: space-between;
@@ -231,10 +241,11 @@ body {
     cursor: pointer;
     padding: 4px 8px;
     border-radius: 8px;
-    transition: background 0.2s;
+    transition: background 0.2s var(--ios-spring), transform 0.2s var(--ios-spring);
 }
 .text-action-btn:hover {
     background: var(--glass-border);
+    transform: scale(1.02);
 }
 
 .icon-btn {
@@ -244,8 +255,9 @@ body {
     font-size: 22px;
     cursor: pointer;
     opacity: 0.7;
+    transition: opacity 0.2s, transform 0.2s var(--ios-spring);
 }
-.icon-btn:hover { opacity: 1; }
+.icon-btn:hover { opacity: 1; transform: scale(1.1); }
 
 .results-body, .lyrics-body {
     max-height: 280px;
@@ -260,12 +272,14 @@ body {
     white-space: pre-line;
 }
 
-/* Default state when inline in search view */
+/* Normal Position for Small Lyrics Container inside Search View Flow */
 #search-view #lyrics-section {
     margin-top: 15px;
+    position: relative;
+    width: 100%;
 }
 
-/* Full Screen Immersive Popup Mode (Breaks out to cover entire screen) */
+/* Full Screen Immersive Popup Mode (Fluid spring transition takeover) */
 .lyrics-card.fullscreen-mode {
     position: fixed !important;
     top: 12px !important;
@@ -281,7 +295,12 @@ body {
     padding: 24px 20px !important;
     display: flex;
     flex-direction: column;
-    animation: iOSFadeSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: iOSZoomModal 0.45s var(--ios-spring) forwards;
+}
+
+@keyframes iOSZoomModal {
+    0% { opacity: 0; transform: scale(0.92) translateY(20px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .lyrics-card.fullscreen-mode .lyrics-body {
@@ -297,9 +316,12 @@ body {
     padding: 10px 12px;
     border-radius: 16px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.25s var(--ios-spring), transform 0.25s var(--ios-spring);
 }
-.song-item:hover { background: var(--glass-border); }
+.song-item:hover { 
+    background: var(--glass-border); 
+    transform: translateX(4px);
+}
 
 .song-thumb {
     width: 44px;
@@ -362,7 +384,7 @@ body {
     color: var(--text-secondary);
     border-radius: 12px;
     cursor: pointer;
-    transition: all 0.25s ease;
+    transition: all 0.3s var(--ios-spring);
 }
 
 .theme-btn.active {
@@ -370,6 +392,7 @@ body {
     color: var(--text-primary);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     font-weight: 600;
+    transform: scale(1.02);
 }
 
 /* iOS Floating Liquid Glass Bottom Navigation */
@@ -381,6 +404,7 @@ body {
     display: flex;
     gap: 12px;
     z-index: 100;
+    transition: transform 0.4s var(--ios-spring);
 }
 
 .tab-capsule {
@@ -408,7 +432,11 @@ body {
     border-radius: 24px;
     cursor: pointer;
     color: var(--text-secondary);
-    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: all 0.35s var(--ios-spring);
+}
+
+.tab-item:active {
+    transform: scale(0.92);
 }
 
 .tab-icon {
@@ -416,7 +444,7 @@ body {
     height: 22px;
     filter: var(--icon-filter);
     opacity: 0.6;
-    transition: opacity 0.3s, transform 0.3s;
+    transition: opacity 0.3s, transform 0.35s var(--ios-spring);
     margin-bottom: 2px;
 }
 
@@ -434,5 +462,5 @@ body {
 
 .tab-item.active .tab-icon {
     opacity: 1;
-    transform: scale(1.05);
+    transform: scale(1.08);
 }
