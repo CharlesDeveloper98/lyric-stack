@@ -342,7 +342,7 @@ function openImmersiveFullScreen() {
     immersiveArtistName.textContent = lyricsArtistTag.textContent;
     immersiveLyricsContent.innerHTML = lyricsContent.innerHTML;
 
-    // Assign the exact targeted track's high-resolution artwork & blurred background
+    // Assign high-resolution artwork and dynamically color the background
     if (currentActiveArtworkUrl) {
         immersiveArtwork.src = currentActiveArtworkUrl;
         immersiveView.style.setProperty('--immersive-bg-image', `url('${currentActiveArtworkUrl}')`);
@@ -351,6 +351,7 @@ function openImmersiveFullScreen() {
     immersiveView.classList.remove('hidden');
     document.body.style.overflow = 'hidden'; // Prevent background scrolling
 }
+
 
 function closeImmersiveFullScreen() {
     if (!immersiveView) return;
