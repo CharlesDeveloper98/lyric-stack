@@ -760,3 +760,79 @@ body {
     50% { background: #32ade6; }
     100% { background: #34c759; }
 }
+
+
+
+/* --- View Transitions & Sliding Animation --- */
+#results-section, #lyrics-section, #search-view {
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+}
+
+/* Slide out / Slide in helper classes */
+.slide-out-left {
+    transform: translateX(-30px);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.slide-in-right {
+    transform: translateX(30px);
+    opacity: 0;
+}
+
+/* --- Lyrics Availability Status Dots --- */
+.availability-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+}
+
+.availability-dot.available {
+    background-color: #34c759; /* iOS Success Green */
+    box-shadow: 0 0 8px rgba(52, 199, 89, 0.5);
+}
+
+.availability-dot.unavailable {
+    background-color: #ff3b30; /* iOS Alert Red */
+    box-shadow: 0 0 8px rgba(255, 59, 48, 0.5);
+}
+
+/* Update song item layout to accommodate the indicator dot */
+.song-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 12px;
+    transition: background 0.2s ease;
+}
+
+.song-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.song-meta {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.song-meta h4 {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0;
+}
+
+.song-meta p {
+    margin: 0;
+    opacity: 0.7;
+    font-size: 0.85rem;
+}
+
+
