@@ -29,39 +29,49 @@ const lyricsArtistTag = document.getElementById('lyrics-artist-tag');
 const fullscreenLyricsBtn = document.getElementById('fullscreen-lyrics-btn');
 const backToResultsBtn = document.getElementById('back-to-results-btn');
 
+// --- Immersive Full-Screen Elements ---
+const immersiveView = document.getElementById('immersive-fullscreen-view');
+const immersiveBackBtn = document.getElementById('immersive-back-btn');
+const immersiveArtwork = document.getElementById('immersive-artwork');
+const immersiveArtworkVideo = document.getElementById('immersive-artwork-video');
+const immersiveSongTitle = document.getElementById('immersive-song-title');
+const immersiveArtistName = document.getElementById('immersive-artist-name');
+const immersiveLyricsContent = document.getElementById('immersive-lyrics-content');
 
+let searchTimeout = null;
+let currentActiveArtworkUrl = ''; // Tracks the active song's specific artwork URL
+
+if (lyricsSection) {
+    lyricsSection.classList.add('hidden');
+}
 
 // --- Dynamic Artwork Motion Toggle Logic with Persistence ---
 const artworkMotionToggle = document.getElementById('artwork-motion-toggle');
-const immersiveFullscreenView = document.getElementById('immersive-fullscreen-view');
 
 const savedMotionState = localStorage.getItem('lyricspot_artwork_motion');
 
 if (savedMotionState === 'enabled') {
     if (artworkMotionToggle) artworkMotionToggle.checked = true;
-    if (immersiveFullscreenView) immersiveFullscreenView.classList.add('artwork-motion-active');
+    if (immersiveView) immersiveView.classList.add('artwork-motion-active');
 } else {
     if (artworkMotionToggle) artworkMotionToggle.checked = false;
-    if (immersiveFullscreenView) immersiveFullscreenView.classList.remove('artwork-motion-active');
+    if (immersiveView) immersiveView.classList.remove('artwork-motion-active');
 }
 
-if (artworkMotionToggle && immersiveFullscreenView) {
+if (artworkMotionToggle && immersiveView) {
     artworkMotionToggle.addEventListener('change', (e) => {
         if (e.target.checked) {
-            immersiveFullscreenView.classList.add('artwork-motion-active');
+            immersiveView.classList.add('artwork-motion-active');
             localStorage.setItem('lyricspot_artwork_motion', 'enabled');
         } else {
-            immersiveFullscreenView.classList.remove('artwork-motion-active');
+            immersiveView.classList.remove('artwork-motion-active');
             localStorage.setItem('lyricspot_artwork_motion', 'disabled');
         }
     });
 }
 
-
-
 // --- Animated Artwork Cover Toggle Logic with Persistence ---
 const animatedCoverToggle = document.getElementById('animated-cover-toggle');
-const immersiveArtworkVideo = document.getElementById('immersive-artwork-video');
 
 const savedAnimatedCoverState = localStorage.getItem('lyricspot_animated_cover');
 
@@ -80,7 +90,7 @@ if (animatedCoverToggle) {
         }
         // Refresh current immersive cover view if open
         if (currentActiveArtworkUrl) {
-            updateImmersiveCoverMedia(currentActiveArtworkUrl);
+            updateImmersiveCoverMedia(immersiveSongTitle.textContent, immersiveArtistName.textContent, currentActiveArtworkUrl);
         }
     });
 }
@@ -88,13 +98,13 @@ if (animatedCoverToggle) {
 async function updateImmersiveCoverMedia(title, artist, defaultArtworkUrl) {
     const isAnimatedEnabled = localStorage.getItem('lyricspot_animated_cover') === 'enabled';
     
-    // Always start with the fallback static image & background
+    // Always fallback/initialize with the static image & background
     immersiveArtwork.src = defaultArtworkUrl;
     immersiveView.style.setProperty('--immersive-bg-image', `url('${defaultArtworkUrl}')`);
 
-    if (isAnimatedEnabled) {
+    if (isAnimatedEnabled && immersiveArtworkVideo) {
         try {
-            // Query the iTunes Search API live for the exact song and artist
+            // Live query to iTunes API to fetch track preview streams / motion assets
             const query = encodeURIComponent(`${title} ${artist}`);
             const response = await fetch(`https://itunes.apple.com/search?term=${query}&entity=musicTrack&limit=1`);
             const data = await response.json();
@@ -102,21 +112,19 @@ async function updateImmersiveCoverMedia(title, artist, defaultArtworkUrl) {
             if (data.results && data.results.length > 0) {
                 const trackData = data.results[0];
                 
-                // Upgrade artwork to high-res (e.g., 1400x1400px instead of default 100x100)
                 if (trackData.artworkUrl100) {
                     const highResArtwork = trackData.artworkUrl100.replace('100x100bb', '1400x1400bb');
                     immersiveArtwork.src = highResArtwork;
                     immersiveView.style.setProperty('--immersive-bg-image', `url('${highResArtwork}')`);
                 }
 
-                // If a preview stream or video asset is available, play it as the animated cover
+                // If a valid media preview stream exists, use it as the animated cover loop
                 if (trackData.previewUrl) {
                     immersiveArtworkVideo.src = trackData.previewUrl;
                     immersiveArtworkVideo.classList.remove('hidden');
                     immersiveArtwork.classList.add('hidden');
                     
                     await immersiveArtworkVideo.play().catch(() => {
-                        // Fallback if autoplay restricted
                         immersiveArtworkVideo.classList.add('hidden');
                         immersiveArtwork.classList.remove('hidden');
                     });
@@ -124,10 +132,10 @@ async function updateImmersiveCoverMedia(title, artist, defaultArtworkUrl) {
                 }
             }
         } catch (error) {
-            console.log("Could not fetch animated cover metadata, using fallback:", error);
+            console.log("Error fetching track online preview, using cinematic loop fallback:", error);
         }
 
-        // Fallback smooth cinematic loop if specific track preview isn't returned
+        // High-definition cinematic motion loop bank matching Apple Music animated art style
         const fallbackMotionLoops = [
             'https://assets.mixkit.co/videos/preview/mixkit-clouds-and-blue-sky-2408-large.mp4',
             'https://assets.mixkit.co/videos/preview/mixkit-silhouette-of-a-girl-jumping-against-the-sky-41551-large.mp4',
@@ -140,33 +148,20 @@ async function updateImmersiveCoverMedia(title, artist, defaultArtworkUrl) {
         immersiveArtwork.classList.add('hidden');
         immersiveArtworkVideo.play().catch(() => {});
     } else {
-        immersiveArtworkVideo.pause();
-        immersiveArtworkVideo.src = '';
-        immersiveArtworkVideo.classList.add('hidden');
+        if (immersiveArtworkVideo) {
+            immersiveArtworkVideo.pause();
+            immersiveArtworkVideo.src = '';
+            immersiveArtworkVideo.classList.add('hidden');
+        }
         immersiveArtwork.classList.remove('hidden');
     }
 }
-
-
-
-
-
-
-
 
 // Theme Elements
 const themeButtons = document.querySelectorAll('.theme-btn');
 const bodyElement = document.body;
 
-let searchTimeout = null;
-let currentActiveArtworkUrl = ''; // Tracks the active song's specific artwork URL
-
-if (lyricsSection) {
-    lyricsSection.classList.add('hidden');
-}
-
 // --- Navigation & Fluid Animation Handler ---
-
 tabHome.addEventListener('click', () => {
     if (floatingTabBar.classList.contains('search-expanded')) {
         collapseSearchCapsule();
@@ -330,7 +325,6 @@ async function performMusicSearch(query) {
     }
 }
 
-// Deep title sanitizer for worldwide matching
 function cleanTitleForQuery(title) {
     return title
         .replace(/[\(\[].*?[\)\]]/g, '') 
@@ -338,12 +332,10 @@ function cleanTitleForQuery(title) {
         .trim();
 }
 
-// 100% Universal Multi-Provider Lyrics Engine
 async function getLyricsData(artist, title, durationMs = 0) {
     const cleanTitle = cleanTitleForQuery(title);
     const durationSec = durationMs ? Math.round(durationMs / 1000) : 0;
 
-    // 1. Try LRCLIB Exact Match (with duration if available)
     if (durationSec) {
         try {
             const exactRes = await fetch(`https://lrclib.net/api/get?track_name=${encodeURIComponent(cleanTitle)}&artist_name=${encodeURIComponent(artist)}&duration=${durationSec}`);
@@ -356,7 +348,6 @@ async function getLyricsData(artist, title, durationMs = 0) {
         } catch (e) {}
     }
 
-    // 2. Try LRCLIB Keyword Search API
     try {
         const lrclibRes = await fetch(`https://lrclib.net/api/search?track_name=${encodeURIComponent(cleanTitle)}&artist_name=${encodeURIComponent(artist)}`);
         const lrclibData = await lrclibRes.json();
@@ -366,25 +357,8 @@ async function getLyricsData(artist, title, durationMs = 0) {
         }
     } catch (e) {}
 
-    // 3. Try Lyrics.ovh (Raw Title)
     try {
         const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
-        const data = await res.json();
-        if (data && data.lyrics && data.lyrics.length > 15) return data.lyrics;
-    } catch (e) {}
-
-    // 4. Try Lyrics.ovh (Cleaned Title)
-    if (cleanTitle !== title) {
-        try {
-            const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(cleanTitle)}`);
-            const data = await res.json();
-            if (data && data.lyrics && data.lyrics.length > 15) return data.lyrics;
-        } catch (e) {}
-    }
-
-    // 5. Try Fallback Source: Some Random API
-    try {
-        const res = await fetch(`https://some-random-api.com/others/lyrics?title=${encodeURIComponent(cleanTitle)}`);
         const data = await res.json();
         if (data && data.lyrics && data.lyrics.length > 15) return data.lyrics;
     } catch (e) {}
@@ -398,7 +372,6 @@ function renderSongList(tracks) {
         const item = document.createElement('div');
         item.className = 'song-item';
         
-        // Upgrade thumbnail URL to higher resolution (600x600) for full screen display
         const artworkUrl = track.artworkUrl100 ? track.artworkUrl100.replace('100x100bb', '600x600bb') : 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=600';
 
         item.innerHTML = `
@@ -410,7 +383,6 @@ function renderSongList(tracks) {
             </div>
         `;
 
-        // 100% Synchronized Dot Indicator Check
         getLyricsData(track.artistName, track.trackName, track.trackTimeMillis).then(lyrics => {
             const dot = document.getElementById(`dot-${index}`);
             if (dot) {
@@ -425,7 +397,6 @@ function renderSongList(tracks) {
         });
 
         item.addEventListener('click', () => {
-            // Bind this specific song's high-res artwork to the global variable
             currentActiveArtworkUrl = artworkUrl;
 
             resultsSection.style.transition = 'transform 0.3s ease, opacity 0.25s ease';
@@ -443,14 +414,6 @@ function renderSongList(tracks) {
         resultsContent.appendChild(item);
     });
 }
-
-// --- Immersive Full-Screen Elements ---
-const immersiveView = document.getElementById('immersive-fullscreen-view');
-const immersiveBackBtn = document.getElementById('immersive-back-btn');
-const immersiveArtwork = document.getElementById('immersive-artwork');
-const immersiveSongTitle = document.getElementById('immersive-song-title');
-const immersiveArtistName = document.getElementById('immersive-artist-name');
-const immersiveLyricsContent = document.getElementById('immersive-lyrics-content');
 
 // Attach listener to close full screen when back chevron is tapped
 if (immersiveBackBtn) {
@@ -483,12 +446,12 @@ function openImmersiveFullScreen() {
     document.body.style.overflow = 'hidden';
 }
 
-
-
-
 function closeImmersiveFullScreen() {
     if (!immersiveView) return;
     immersiveView.classList.add('hidden');
+    if (immersiveArtworkVideo) {
+        immersiveArtworkVideo.pause();
+    }
     document.body.style.overflow = '';
 }
 
