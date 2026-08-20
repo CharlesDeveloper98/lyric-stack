@@ -317,6 +317,59 @@ function renderSongList(tracks) {
     });
 }
 
+
+
+
+// --- Immersive Full-Screen Elements ---
+const immersiveView = document.getElementById('immersive-fullscreen-view');
+const immersiveBackBtn = document.getElementById('immersive-back-btn');
+const immersiveArtwork = document.getElementById('immersive-artwork');
+const immersiveSongTitle = document.getElementById('immersive-song-title');
+const immersiveArtistName = document.getElementById('immersive-artist-name');
+const immersiveLyricsContent = document.getElementById('immersive-lyrics-content');
+
+// Attach listener to open full screen when "See full lyrics..." is clicked
+if (fullscreenLyricsBtn) {
+    fullscreenLyricsBtn.addEventListener('click', () => {
+        openImmersiveFullScreen();
+    });
+}
+
+// Attach listener to close full screen when back chevron is tapped
+if (immersiveBackBtn) {
+    immersiveBackBtn.addEventListener('click', () => {
+        closeImmersiveFullScreen();
+    });
+}
+
+function openImmersiveFullScreen() {
+    if (!immersiveView) return;
+
+    // Transfer current data into immersive view elements
+    immersiveSongTitle.textContent = lyricsTitle.textContent;
+    immersiveArtistName.textContent = lyricsArtistTag.textContent;
+    immersiveLyricsContent.innerHTML = lyricsContent.innerHTML;
+
+    // Grab current track artwork from active item or cache if available
+    const activeThumb = document.querySelector('.song-thumb');
+    if (activeThumb) {
+        immersiveArtwork.src = activeThumb.src;
+    }
+
+    immersiveView.classList.remove('hidden');
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+}
+
+function closeImmersiveFullScreen() {
+    if (!immersiveView) return;
+    immersiveView.classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+
+
+
+
 async function fetchAndDisplayLyrics(artist, title, durationMs) {
     lyricsSection.classList.remove('hidden');
     lyricsSection.style.transform = 'translateX(40px)';
