@@ -59,6 +59,65 @@ if (artworkMotionToggle && immersiveFullscreenView) {
 
 
 
+// --- Animated Artwork Cover Toggle Logic with Persistence ---
+const animatedCoverToggle = document.getElementById('animated-cover-toggle');
+const immersiveArtworkVideo = document.getElementById('immersive-artwork-video');
+
+const savedAnimatedCoverState = localStorage.getItem('lyricspot_animated_cover');
+
+if (savedAnimatedCoverState === 'enabled') {
+    if (animatedCoverToggle) animatedCoverToggle.checked = true;
+} else {
+    if (animatedCoverToggle) animatedCoverToggle.checked = false;
+}
+
+if (animatedCoverToggle) {
+    animatedCoverToggle.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            localStorage.setItem('lyricspot_animated_cover', 'enabled');
+        } else {
+            localStorage.setItem('lyricspot_animated_cover', 'disabled');
+        }
+        // Refresh current immersive cover view if open
+        if (currentActiveArtworkUrl) {
+            updateImmersiveCoverMedia(currentActiveArtworkUrl);
+        }
+    });
+}
+
+function updateImmersiveCoverMedia(artworkUrl) {
+    const isAnimatedEnabled = localStorage.getItem('lyricspot_animated_cover') === 'enabled';
+    
+    immersiveArtwork.src = artworkUrl;
+    immersiveView.style.setProperty('--immersive-bg-image', `url('${artworkUrl}')`);
+
+    if (isAnimatedEnabled) {
+        // Map high-res track artwork to a cinematic motion loop sample or track preview video
+        // Using high-quality public motion background/visualizer loops as an Apple Music-style animated cover equivalent
+        const sampleMotionLoops = [
+            'https://assets.mixkit.co/videos/preview/mixkit-digital-animation-of-screens-and-lights-31910-large.mp4',
+            'https://assets.mixkit.co/videos/preview/mixkit-abstract-laser-background-41445-large.mp4',
+            'https://assets.mixkit.co/videos/preview/mixkit-liquid-colorful-ink-background-41443-large.mp4'
+        ];
+        // Pick a deterministic loop based on string length of artwork url
+        const loopIndex = artworkUrl.length % sampleMotionLoops.length;
+        
+        immersiveArtworkVideo.src = sampleMotionLoops[loopIndex];
+        immersiveArtworkVideo.classList.remove('hidden');
+        immersiveArtwork.classList.add('hidden');
+        immersiveArtworkVideo.play().catch(() => {});
+    } else {
+        immersiveArtworkVideo.pause();
+        immersiveArtworkVideo.src = '';
+        immersiveArtworkVideo.classList.add('hidden');
+        immersiveArtwork.classList.remove('hidden');
+    }
+}
+
+
+
+
+
 
 // Theme Elements
 const themeButtons = document.querySelectorAll('.theme-btn');
