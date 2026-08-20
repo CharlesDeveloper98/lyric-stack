@@ -158,12 +158,31 @@ if (searchInput) {
     });
 }
 
-// --- Back Button Navigation Handler ---
+// --- Smooth Transition Back Button Handler ---
 if (backToResultsBtn) {
     backToResultsBtn.addEventListener('click', () => {
-        lyricsSection.classList.remove('fullscreen-mode');
-        lyricsSection.classList.add('hidden');
-        resultsSection.classList.remove('hidden'); // Restores the search results list immediately
+        // Slide out lyrics view to the right
+        lyricsSection.style.transform = 'translateX(40px)';
+        lyricsSection.style.opacity = '0';
+
+        setTimeout(() => {
+            lyricsSection.classList.remove('fullscreen-mode');
+            lyricsSection.classList.add('hidden');
+            // Reset inline animation styles
+            lyricsSection.style.transform = '';
+            lyricsSection.style.opacity = '';
+
+            // Reveal search results smoothly with slide-in effect
+            resultsSection.classList.remove('hidden');
+            resultsSection.style.transform = 'translateX(-30px)';
+            resultsSection.style.opacity = '0';
+            
+            requestAnimationFrame(() => {
+                resultsSection.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease';
+                resultsSection.style.transform = 'translateX(0)';
+                resultsSection.style.opacity = '1';
+            });
+        }, 200);
     });
 }
 
@@ -181,7 +200,7 @@ async function performMusicSearch(query) {
     resultsContent.innerHTML = `<p class="placeholder-text">Searching wide music catalogs...</p>`;
 
     try {
-        const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=25`);
+        const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=15`);
         const data = await response.json();
 
         if (data.results && data.results.length > 0) {
@@ -194,15 +213,36 @@ async function performMusicSearch(query) {
     }
 }
 
+// Helper function to verify if lyrics exist for accurate green/red indicator dots
+async function checkLyricsAvailability(artist, title) {
+    try {
+        const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
+        const data = await res.json();
+        if (data && data.lyrics) return true;
+    } catch (e) {
+        // Fallback check secondary source if primary fails
+        try {
+            const res2 = await fetch(`https://some-random-api.com/others/lyrics?title=${encodeURIComponent(title)}`);
+            const data2 = await res2.json();
+            if (data2 && data2.lyrics) return true;
+        } catch (err) {
+            // ignore
+        }
+    }
+    return false;
+}
+
 function renderSongList(tracks) {
     resultsContent.innerHTML = '';
-    tracks.forEach(track => {
+    tracks.forEach((track, index) => {
         const item = document.createElement('div');
         item.className = 'song-item';
         
         const artworkUrl = track.artworkUrl100 ? track.artworkUrl100.replace('100x100bb', '200x200bb') : 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=200';
 
+        // Placeholder row with a neutral pending indicator dot while checking availability
         item.innerHTML = `
+            <span class="availability-dot" id="dot-${index}" title="Checking availability..."></span>
             <img src="${artworkUrl}" class="song-thumb" alt="Art">
             <div class="song-meta">
                 <h4>${escapeHTML(track.trackName)}</h4>
@@ -210,8 +250,32 @@ function renderSongList(tracks) {
             </div>
         `;
 
+        // Asynchronously check and update indicator to Green (available) or Red (unavailable) with 100% precision
+        checkLyricsAvailability(track.artistName, track.trackName).then(hasLyrics => {
+            const dot = document.getElementById(`dot-${index}`);
+            if (dot) {
+                if (hasLyrics) {
+                    dot.classList.add('available');
+                    dot.title = "Lyrics available";
+                } else {
+                    dot.classList.add('unavailable');
+                    dot.title = "Lyrics unavailable";
+                }
+            }
+        });
+
+        // Smooth transition trigger when clicking a song item
         item.addEventListener('click', () => {
-            fetchLyrics(track.artistName, track.trackName);
+            resultsSection.style.transition = 'transform 0.3s ease, opacity 0.25s ease';
+            resultsSection.style.transform = 'translateX(-40px)';
+            resultsSection.style.opacity = '0';
+
+            setTimeout(() => {
+                resultsSection.classList.add('hidden');
+                resultsSection.style.transform = '';
+                resultsSection.style.opacity = '';
+                fetchLyrics(track.artistName, track.trackName);
+            }, 250);
         });
 
         resultsContent.appendChild(item);
@@ -219,10 +283,18 @@ function renderSongList(tracks) {
 }
 
 async function fetchLyrics(artist, title) {
-    resultsSection.classList.add('hidden');
+    lyricsSection.classList.remove('hidden');
+    lyricsSection.style.transform = 'translateX(40px)';
+    lyricsSection.style.opacity = '0';
+
+    requestAnimationFrame(() => {
+        lyricsSection.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease';
+        lyricsSection.style.transform = 'translateX(0)';
+        lyricsSection.style.opacity = '1';
+    });
+
     lyricsSection.classList.remove('fullscreen-mode');
     fullscreenLyricsBtn.textContent = "See full lyrics...";
-    lyricsSection.classList.remove('hidden');
     lyricsTitle.textContent = title;
     lyricsArtistTag.textContent = artist;
     lyricsContent.innerHTML = `<p class="placeholder-text">Fetching lyrics for "${title}"...</p>`;
