@@ -579,43 +579,34 @@ async function playMP4Artwork(
 // ==========================================
 
 function extractAnimatedArtwork(data) {
-
-    if (!data) {
-        return null;
-    }
-
-    // Some APIs return the artwork object directly.
-    // Others return an array or nested result.
+    if (!data) return null;
 
     let artwork = data;
+    if (Array.isArray(data)) artwork = data[0];
+    else if (Array.isArray(data.results)) artwork = data.results[0];
+    else if (Array.isArray(data.data)) artwork = data.data[0];
+    else if (data.result && typeof data.result === 'object') artwork = data.result;
 
-    if (Array.isArray(data)) {
+    if (!artwork) return null;
 
-        artwork = data[0];
+    const staticUrl = artwork.static || artwork.staticUrl || artwork.artwork || artwork.artworkUrl || artwork.image || '';
 
-    } else if (
-        Array.isArray(data.results)
-    ) {
+    // Check all possible video/HLS properties returned by the API
+    const videoUrl = artwork.videoUrl || artwork.video_url || artwork.mp4 || artwork.mp4Url || artwork.tallVideoUrl || artwork.tall_video_url || '';
+    const hlsUrl = artwork.hlsUrl || artwork.hls_url || artwork.hls || artwork.m3u8 || artwork.tallHlsUrl || '';
 
-        artwork = data.results[0];
-
-    } else if (
-        Array.isArray(data.data)
-    ) {
-
-        artwork = data.data[0];
-
-    } else if (
-        data.result &&
-        typeof data.result === 'object'
-    ) {
-
-        artwork = data.result;
+    if (videoUrl || hlsUrl) {
+        return {
+            staticUrl,
+            videoUrl,
+            hlsUrl,
+            variant: 'tall'
+        };
     }
 
-    if (!artwork) {
-        return null;
-    }
+    return null;
+}
+
 
     // ------------------------------------------
     // Static artwork
@@ -1727,8 +1718,8 @@ function renderSongList(
             // artwork.
             // ----------------------------------
 
-            const albumName =
-                track.collectionName ||
+            const albumName = track.collectionName || track.trackName || 
+
                 '';
 
             item.innerHTML = `
