@@ -1044,3 +1044,15 @@ body {
     display: none !important;
 }
 
+
+
+#immersive-fullscreen-view.artwork-motion-active #immersive-artwork-video:not(.hidden) {
+    display: block;
+    opacity: 1;
+}
+
+#immersive-artwork-video.hidden,
+#immersive-artwork.hidden {
+    display: none !important;
+}
+
