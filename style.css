@@ -836,3 +836,128 @@ body {
 }
 
 
+
+
+/* Immersive Full Screen Overlay */
+.immersive-view {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #0b0b0e;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+}
+
+.immersive-view.hidden {
+    display: none;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+/* Top Back Chevron Container */
+.immersive-header-overlay {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 10;
+}
+
+.immersive-back-btn {
+    width: 44px;
+    height: 44px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.immersive-back-btn:hover {
+    background: rgba(0, 0, 0, 0.7);
+    transform: scale(1.05);
+}
+
+/* Full-Screen Music Picture Hero Section */
+.immersive-hero {
+    position: relative;
+    width: 100%;
+    height: 55vh;
+    min-height: 380px;
+    background-color: #1a1a1a;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+#immersive-artwork {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.immersive-hero-gradient {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 60%;
+    background: linear-gradient(to top, #0b0b0e 0%, rgba(11, 11, 14, 0.7) 50%, transparent 100%);
+}
+
+.immersive-title-box {
+    position: absolute;
+    bottom: 24px;
+    left: 24px;
+    right: 24px;
+    z-index: 5;
+}
+
+#immersive-song-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1.15;
+    margin: 0 0 6px 0;
+    letter-spacing: -0.02em;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+#immersive-artist-name {
+    font-size: 1.15rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+
+/* Scrollable Lyrics Section Below Picture */
+.immersive-lyrics-scroll-container {
+    flex-grow: 1;
+    background-color: #0b0b0e;
+    padding: 32px 28px 80px 28px;
+    box-sizing: border-box;
+}
+
+#immersive-lyrics-content {
+    max-width: 700px;
+    margin: 0 auto;
+    font-size: 1.25rem;
+    font-weight: 500;
+    line-height: 1.8;
+    color: rgba(255, 255, 255, 0.85);
+    white-space: pre-line;
+    text-align: left;
+}
+
+
