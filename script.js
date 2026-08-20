@@ -215,18 +215,42 @@ function cleanTitleForQuery(title) {
         .trim();
 }
 
-// Unified Global Multi-Provider Fetcher (100% Accurate Sync)
-async function getLyricsData(artist, title) {
+// 100% Universal Multi-Provider Lyrics Engine
+async function getLyricsData(artist, title, durationMs = 0) {
     const cleanTitle = cleanTitleForQuery(title);
+    const durationSec = durationMs ? Math.round(durationMs / 1000) : 0;
 
-    // 1. Try Primary Source: Lyrics.ovh (Raw Title)
+    // 1. Try LRCLIB Exact Match (with duration if available)
+    if (durationSec) {
+        try {
+            const exactRes = await fetch(`https://lrclib.net/api/get?track_name=${encodeURIComponent(cleanTitle)}&artist_name=${encodeURIComponent(artist)}&duration=${durationSec}`);
+            if (exactRes.ok) {
+                const exactData = await exactRes.json();
+                if (exactData && exactData.plainLyrics && exactData.plainLyrics.length > 10) {
+                    return exactData.plainLyrics;
+                }
+            }
+        } catch (e) {}
+    }
+
+    // 2. Try LRCLIB Keyword Search API
+    try {
+        const lrclibRes = await fetch(`https://lrclib.net/api/search?track_name=${encodeURIComponent(cleanTitle)}&artist_name=${encodeURIComponent(artist)}`);
+        const lrclibData = await lrclibRes.json();
+        if (Array.isArray(lrclibData) && lrclibData.length > 0) {
+            const match = lrclibData.find(item => item.plainLyrics && item.plainLyrics.length > 10);
+            if (match) return match.plainLyrics;
+        }
+    } catch (e) {}
+
+    // 3. Try Lyrics.ovh (Raw Title)
     try {
         const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
         const data = await res.json();
         if (data && data.lyrics && data.lyrics.length > 15) return data.lyrics;
     } catch (e) {}
 
-    // 2. Try Primary Source: Lyrics.ovh (Cleaned Title)
+    // 4. Try Lyrics.ovh (Cleaned Title)
     if (cleanTitle !== title) {
         try {
             const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(cleanTitle)}`);
@@ -235,17 +259,7 @@ async function getLyricsData(artist, title) {
         } catch (e) {}
     }
 
-    // 3. Try Secondary Source: LRCLIB API (Global community database for international & regional music)
-    try {
-        const lrclibRes = await fetch(`https://lrclib.net/api/search?track_name=${encodeURIComponent(cleanTitle)}&artist_name=${encodeURIComponent(artist)}`);
-        const lrclibData = await lrclibRes.json();
-        if (Array.isArray(lrclibData) && lrclibData.length > 0) {
-            const match = lrclibData.find(item => item.plainLyrics && item.plainLyrics.length > 15);
-            if (match) return match.plainLyrics;
-        }
-    } catch (e) {}
-
-    // 4. Try Fallback Source: Some Random API
+    // 5. Try Fallback Source: Some Random API
     try {
         const res = await fetch(`https://some-random-api.com/others/lyrics?title=${encodeURIComponent(cleanTitle)}`);
         const data = await res.json();
@@ -272,8 +286,8 @@ function renderSongList(tracks) {
             </div>
         `;
 
-        // 100% Synchronized Availability Check using the identical retrieval engine
-        getLyricsData(track.artistName, track.trackName).then(lyrics => {
+        // 100% Synchronized Dot Indicator Check
+        getLyricsData(track.artistName, track.trackName, track.trackTimeMillis).then(lyrics => {
             const dot = document.getElementById(`dot-${index}`);
             if (dot) {
                 if (lyrics) {
@@ -295,7 +309,7 @@ function renderSongList(tracks) {
                 resultsSection.classList.add('hidden');
                 resultsSection.style.transform = '';
                 resultsSection.style.opacity = '';
-                fetchAndDisplayLyrics(track.artistName, track.trackName);
+                fetchAndDisplayLyrics(track.artistName, track.trackName, track.trackTimeMillis);
             }, 250);
         });
 
@@ -303,7 +317,7 @@ function renderSongList(tracks) {
     });
 }
 
-async function fetchAndDisplayLyrics(artist, title) {
+async function fetchAndDisplayLyrics(artist, title, durationMs) {
     lyricsSection.classList.remove('hidden');
     lyricsSection.style.transform = 'translateX(40px)';
     lyricsSection.style.opacity = '0';
@@ -320,7 +334,7 @@ async function fetchAndDisplayLyrics(artist, title) {
     lyricsArtistTag.textContent = artist;
     lyricsContent.innerHTML = `<p class="placeholder-text">Fetching lyrics for "${title}"...</p>`;
 
-    const lyrics = await getLyricsData(artist, title);
+    const lyrics = await getLyricsData(artist, title, durationMs);
 
     if (lyrics) {
         lyricsContent.textContent = lyrics;
