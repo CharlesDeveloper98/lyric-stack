@@ -15,6 +15,7 @@ const searchInputWrapper = document.getElementById('search-input-wrapper');
 const searchInput = document.getElementById('search-input');
 const micBtn = document.getElementById('mic-btn');
 
+
 // Search & Lyrics Elements
 const resultsSection = document.getElementById('results-section');
 const resultsContent = document.getElementById('results-content');
@@ -22,8 +23,9 @@ const lyricsSection = document.getElementById('lyrics-section');
 const lyricsContent = document.getElementById('lyrics-content');
 const lyricsTitle = document.getElementById('lyrics-title');
 const lyricsArtistTag = document.getElementById('lyrics-artist-tag');
-const closeLyricsBtn = document.getElementById('close-lyrics');
 const fullscreenLyricsBtn = document.getElementById('fullscreen-lyrics-btn');
+const backToResultsBtn = document.getElementById('back-to-results-btn');
+
 
 // Theme Elements
 const themeButtons = document.querySelectorAll('.theme-btn');
@@ -214,10 +216,11 @@ function renderSongList(tracks) {
 // Add constant element mapping
 const backToResultsBtn = document.getElementById('back-to-results-btn');
 
+// --- Back Button Navigation Handler ---
 backToResultsBtn.addEventListener('click', () => {
     lyricsSection.classList.remove('fullscreen-mode');
     lyricsSection.classList.add('hidden');
-    resultsSection.classList.remove('hidden'); // Restores the exact search results list
+    resultsSection.classList.remove('hidden'); // Restores the search results list immediately
 });
 
 
