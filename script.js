@@ -88,29 +88,38 @@ if (animatedCoverToggle) {
 function updateImmersiveCoverMedia(artworkUrl) {
     const isAnimatedEnabled = localStorage.getItem('lyricspot_animated_cover') === 'enabled';
     
+    // Set base fallback image
     immersiveArtwork.src = artworkUrl;
     immersiveView.style.setProperty('--immersive-bg-image', `url('${artworkUrl}')`);
 
     if (isAnimatedEnabled) {
-        // Map high-res track artwork to a cinematic motion loop sample or track preview video
-        // Using high-quality public motion background/visualizer loops as an Apple Music-style animated cover equivalent
-        const sampleMotionLoops = [
-            'https://assets.mixkit.co/videos/preview/mixkit-digital-animation-of-screens-and-lights-31910-large.mp4',
-            'https://assets.mixkit.co/videos/preview/mixkit-abstract-laser-background-41445-large.mp4',
-            'https://assets.mixkit.co/videos/preview/mixkit-liquid-colorful-ink-background-41443-large.mp4'
+        // Curated high-res motion loop video URLs matching cinematic Apple Music motion artwork styles
+        const appleMusicMotionCovers = [
+            'https://assets.mixkit.co/videos/preview/mixkit-clouds-and-blue-sky-2408-large.mp4', // Dreamy / Pop style loop
+            'https://assets.mixkit.co/videos/preview/mixkit-silhouette-of-a-girl-jumping-against-the-sky-41551-large.mp4', // Person/Artist motion style loop
+            'https://assets.mixkit.co/videos/preview/mixkit-abstract-rotating-vortex-background-41444-large.mp4' // Abstract visualizer loop
         ];
-        // Pick a deterministic loop based on string length of artwork url
-        const loopIndex = artworkUrl.length % sampleMotionLoops.length;
         
-        immersiveArtworkVideo.src = sampleMotionLoops[loopIndex];
+        // Pick video based on track title or artwork hash for consistency per song
+        const titleString = immersiveSongTitle.textContent || '';
+        const charCodeSum = titleString.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const selectedVideoUrl = appleMusicMotionCovers[charCodeSum % appleMusicMotionCovers.length];
+
+        immersiveArtworkVideo.src = selectedVideoUrl;
         immersiveArtworkVideo.classList.remove('hidden');
-        immersiveArtwork.classList.add('hidden');
-        immersiveArtworkVideo.play().catch(() => {});
+        immersiveArtwork.classList.add('hidden'); // Hide static image, display live motion cover
+        
+        // Ensure smooth autoplay loop
+        immersiveArtworkVideo.play().catch((err) => {
+            console.log("Autoplay prevented or video loading:", err);
+            immersiveArtworkVideo.classList.add('hidden');
+            immersiveArtwork.classList.remove('hidden');
+        });
     } else {
         immersiveArtworkVideo.pause();
         immersiveArtworkVideo.src = '';
         immersiveArtworkVideo.classList.add('hidden');
-        immersiveArtwork.classList.remove('hidden');
+        immersiveArtwork.classList.remove('hidden'); // Fall back to regular static picture
     }
 }
 
