@@ -85,43 +85,69 @@ if (animatedCoverToggle) {
     });
 }
 
-function updateImmersiveCoverMedia(artworkUrl) {
+async function updateImmersiveCoverMedia(title, artist, defaultArtworkUrl) {
     const isAnimatedEnabled = localStorage.getItem('lyricspot_animated_cover') === 'enabled';
     
-    // Set base fallback image
-    immersiveArtwork.src = artworkUrl;
-    immersiveView.style.setProperty('--immersive-bg-image', `url('${artworkUrl}')`);
+    // Always start with the fallback static image & background
+    immersiveArtwork.src = defaultArtworkUrl;
+    immersiveView.style.setProperty('--immersive-bg-image', `url('${defaultArtworkUrl}')`);
 
     if (isAnimatedEnabled) {
-        // Curated high-res motion loop video URLs matching cinematic Apple Music motion artwork styles
-        const appleMusicMotionCovers = [
-            'https://assets.mixkit.co/videos/preview/mixkit-clouds-and-blue-sky-2408-large.mp4', // Dreamy / Pop style loop
-            'https://assets.mixkit.co/videos/preview/mixkit-silhouette-of-a-girl-jumping-against-the-sky-41551-large.mp4', // Person/Artist motion style loop
-            'https://assets.mixkit.co/videos/preview/mixkit-abstract-rotating-vortex-background-41444-large.mp4' // Abstract visualizer loop
-        ];
-        
-        // Pick video based on track title or artwork hash for consistency per song
-        const titleString = immersiveSongTitle.textContent || '';
-        const charCodeSum = titleString.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const selectedVideoUrl = appleMusicMotionCovers[charCodeSum % appleMusicMotionCovers.length];
+        try {
+            // Query the iTunes Search API live for the exact song and artist
+            const query = encodeURIComponent(`${title} ${artist}`);
+            const response = await fetch(`https://itunes.apple.com/search?term=${query}&entity=musicTrack&limit=1`);
+            const data = await response.json();
 
-        immersiveArtworkVideo.src = selectedVideoUrl;
-        immersiveArtworkVideo.classList.remove('hidden');
-        immersiveArtwork.classList.add('hidden'); // Hide static image, display live motion cover
+            if (data.results && data.results.length > 0) {
+                const trackData = data.results[0];
+                
+                // Upgrade artwork to high-res (e.g., 1400x1400px instead of default 100x100)
+                if (trackData.artworkUrl100) {
+                    const highResArtwork = trackData.artworkUrl100.replace('100x100bb', '1400x1400bb');
+                    immersiveArtwork.src = highResArtwork;
+                    immersiveView.style.setProperty('--immersive-bg-image', `url('${highResArtwork}')`);
+                }
+
+                // If a preview stream or video asset is available, play it as the animated cover
+                if (trackData.previewUrl) {
+                    immersiveArtworkVideo.src = trackData.previewUrl;
+                    immersiveArtworkVideo.classList.remove('hidden');
+                    immersiveArtwork.classList.add('hidden');
+                    
+                    await immersiveArtworkVideo.play().catch(() => {
+                        // Fallback if autoplay restricted
+                        immersiveArtworkVideo.classList.add('hidden');
+                        immersiveArtwork.classList.remove('hidden');
+                    });
+                    return;
+                }
+            }
+        } catch (error) {
+            console.log("Could not fetch animated cover metadata, using fallback:", error);
+        }
+
+        // Fallback smooth cinematic loop if specific track preview isn't returned
+        const fallbackMotionLoops = [
+            'https://assets.mixkit.co/videos/preview/mixkit-clouds-and-blue-sky-2408-large.mp4',
+            'https://assets.mixkit.co/videos/preview/mixkit-silhouette-of-a-girl-jumping-against-the-sky-41551-large.mp4',
+            'https://assets.mixkit.co/videos/preview/mixkit-abstract-rotating-vortex-background-41444-large.mp4'
+        ];
+        const loopIndex = title.length % fallbackMotionLoops.length;
         
-        // Ensure smooth autoplay loop
-        immersiveArtworkVideo.play().catch((err) => {
-            console.log("Autoplay prevented or video loading:", err);
-            immersiveArtworkVideo.classList.add('hidden');
-            immersiveArtwork.classList.remove('hidden');
-        });
+        immersiveArtworkVideo.src = fallbackMotionLoops[loopIndex];
+        immersiveArtworkVideo.classList.remove('hidden');
+        immersiveArtwork.classList.add('hidden');
+        immersiveArtworkVideo.play().catch(() => {});
     } else {
         immersiveArtworkVideo.pause();
         immersiveArtworkVideo.src = '';
         immersiveArtworkVideo.classList.add('hidden');
-        immersiveArtwork.classList.remove('hidden'); // Fall back to regular static picture
+        immersiveArtwork.classList.remove('hidden');
     }
 }
+
+
 
 
 
@@ -436,20 +462,28 @@ if (immersiveBackBtn) {
 function openImmersiveFullScreen() {
     if (!immersiveView) return;
 
-    // Transfer current data into immersive view elements
-    immersiveSongTitle.textContent = lyricsTitle.textContent;
-    immersiveArtistName.textContent = lyricsArtistTag.textContent;
+    const songTitleText = lyricsTitle.textContent;
+    const artistNameText = lyricsArtistTag.textContent;
+
+    immersiveSongTitle.textContent = songTitleText;
+    immersiveArtistName.textContent = artistNameText;
     immersiveLyricsContent.innerHTML = lyricsContent.innerHTML;
 
-    // Assign high-resolution artwork and dynamically color the background
     if (currentActiveArtworkUrl) {
-        immersiveArtwork.src = currentActiveArtworkUrl;
-        immersiveView.style.setProperty('--immersive-bg-image', `url('${currentActiveArtworkUrl}')`);
+        updateImmersiveCoverMedia(songTitleText, artistNameText, currentActiveArtworkUrl);
+    }
+
+    if (localStorage.getItem('lyricspot_artwork_motion') === 'enabled') {
+        immersiveView.classList.add('artwork-motion-active');
+    } else {
+        immersiveView.classList.remove('artwork-motion-active');
     }
 
     immersiveView.classList.remove('hidden');
-    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    document.body.style.overflow = 'hidden';
 }
+
+
 
 
 function closeImmersiveFullScreen() {
