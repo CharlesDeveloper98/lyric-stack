@@ -35,7 +35,6 @@ const bodyElement = document.body;
 
 let searchTimeout = null;
 
-// Ensure lyrics starts hidden
 if (lyricsSection) {
     lyricsSection.classList.add('hidden');
 }
@@ -105,7 +104,6 @@ function switchView(targetView) {
     });
 }
 
-// Microphone action handler
 if (micBtn) {
     micBtn.addEventListener('click', () => {
         searchInput.focus();
@@ -158,7 +156,6 @@ if (searchInput) {
     });
 }
 
-// --- Smooth Transition Back Button Handler ---
 if (backToResultsBtn) {
     backToResultsBtn.addEventListener('click', () => {
         lyricsSection.style.transform = 'translateX(40px)';
@@ -210,40 +207,52 @@ async function performMusicSearch(query) {
     }
 }
 
-// Helper to clean song titles for precise matching (removes parentheses like "(feat..." or "(Album Version)")
+// Deep cleanup for superior title matching
 function cleanTitleForQuery(title) {
-    return title.replace(/[\(\[].*?[\)\]]/g, '').trim();
+    return title
+        .replace(/[\(\[].*?[\)\]]/g, '') // Removes parentheses text like (feat. X)
+        .replace(/[-–—]\s*(Single Version|Remix|Radio Edit|Acoustic|Live).*$/i, '')
+        .trim();
 }
 
-// 100% Reliable Multi-tier Lyrics Availability Checker
-async function checkLyricsAvailability(artist, title) {
+// Expanded Multi-Provider Fetcher for Global & Regional Tracks
+async function getLyricsData(artist, title) {
     const cleanTitle = cleanTitleForQuery(title);
-    
-    // Try primary provider (Lyrics.ovh) using both raw and cleaned titles
+
+    // 1. Try Primary Source: Lyrics.ovh (Raw Title)
     try {
         const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
         const data = await res.json();
-        if (data && data.lyrics && data.lyrics.length > 20) return true;
-        
-        if (cleanTitle !== title) {
-            const resClean = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(cleanTitle)}`);
-            const dataClean = await resClean.json();
-            if (dataClean && dataClean.lyrics && dataClean.lyrics.length > 20) return true;
-        }
-    } catch (e) {
-        // Fall through to secondary check
+        if (data && data.lyrics && data.lyrics.length > 15) return data.lyrics;
+    } catch (e) {}
+
+    // 2. Try Primary Source: Lyrics.ovh (Cleaned Title)
+    if (cleanTitle !== title) {
+        try {
+            const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(cleanTitle)}`);
+            const data = await res.json();
+            if (data && data.lyrics && data.lyrics.length > 15) return data.lyrics;
+        } catch (e) {}
     }
 
-    // Try secondary provider (Some Random API)
+    // 3. Try Secondary Source: LRCLIB API (Specialized in massive global and independent catalogs)
     try {
-        const res2 = await fetch(`https://some-random-api.com/others/lyrics?title=${encodeURIComponent(cleanTitle)}`);
-        const data2 = await res2.json();
-        if (data2 && data2.lyrics && data2.lyrics.length > 20) return true;
-    } catch (err) {
-        // Fall through
-    }
+        const lrclibRes = await fetch(`https://lrclib.net/api/search?track_name=${encodeURIComponent(cleanTitle)}&artist_name=${encodeURIComponent(artist)}`);
+        const lrclibData = await lrclibRes.json();
+        if (Array.isArray(lrclibData) && lrclibData.length > 0) {
+            const match = lrclibData.find(item => item.plainLyrics && item.plainLyrics.length > 15);
+            if (match) return match.plainLyrics;
+        }
+    } catch (e) {}
 
-    return false;
+    // 4. Try Fallback Source: Some Random API
+    try {
+        const res = await fetch(`https://some-random-api.com/others/lyrics?title=${encodeURIComponent(cleanTitle)}`);
+        const data = await res.json();
+        if (data && data.lyrics && data.lyrics.length > 15) return data.lyrics;
+    } catch (e) {}
+
+    return null;
 }
 
 function renderSongList(tracks) {
@@ -263,11 +272,11 @@ function renderSongList(tracks) {
             </div>
         `;
 
-        // Asynchronously execute 100% accurate check
-        checkLyricsAvailability(track.artistName, track.trackName).then(hasLyrics => {
+        // Asynchronously check across multiple databases
+        getLyricsData(track.artistName, track.trackName).then(lyrics => {
             const dot = document.getElementById(`dot-${index}`);
             if (dot) {
-                if (hasLyrics) {
+                if (lyrics) {
                     dot.classList.add('available');
                     dot.title = "Lyrics available";
                 } else {
@@ -277,7 +286,6 @@ function renderSongList(tracks) {
             }
         });
 
-        // Smooth transition click handler
         item.addEventListener('click', () => {
             resultsSection.style.transition = 'transform 0.3s ease, opacity 0.25s ease';
             resultsSection.style.transform = 'translateX(-40px)';
@@ -287,7 +295,7 @@ function renderSongList(tracks) {
                 resultsSection.classList.add('hidden');
                 resultsSection.style.transform = '';
                 resultsSection.style.opacity = '';
-                fetchLyrics(track.artistName, track.trackName);
+                fetchAndDisplayLyrics(track.artistName, track.trackName);
             }, 250);
         });
 
@@ -295,7 +303,7 @@ function renderSongList(tracks) {
     });
 }
 
-async function fetchLyrics(artist, title) {
+async function fetchAndDisplayLyrics(artist, title) {
     lyricsSection.classList.remove('hidden');
     lyricsSection.style.transform = 'translateX(40px)';
     lyricsSection.style.opacity = '0';
@@ -312,40 +320,12 @@ async function fetchLyrics(artist, title) {
     lyricsArtistTag.textContent = artist;
     lyricsContent.innerHTML = `<p class="placeholder-text">Fetching lyrics for "${title}"...</p>`;
 
-    const cleanTitle = cleanTitleForQuery(title);
+    const lyrics = await getLyricsData(artist, title);
 
-    try {
-        const response = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
-        const data = await response.json();
-
-        if (data.lyrics) {
-            lyricsContent.textContent = data.lyrics;
-        } else {
-            // Try fallback with cleaned title if direct lookup fails
-            const resClean = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(cleanTitle)}`);
-            const dataClean = await resClean.json();
-            if (dataClean.lyrics) {
-                lyricsContent.textContent = dataClean.lyrics;
-            } else {
-                fetchSecondaryLyricsSource(artist, cleanTitle);
-            }
-        }
-    } catch (e) {
-        fetchSecondaryLyricsSource(artist, cleanTitle);
-    }
-}
-
-async function fetchSecondaryLyricsSource(artist, title) {
-    try {
-        const res = await fetch(`https://some-random-api.com/others/lyrics?title=${encodeURIComponent(title)}`);
-        const data = await res.json();
-        if (data && data.lyrics) {
-            lyricsContent.textContent = data.lyrics;
-        } else {
-            lyricsContent.innerHTML = `<p class="placeholder-text">Lyrics unavailable for <b>${title}</b>.</p>`;
-        }
-    } catch (err) {
-        lyricsContent.innerHTML = `<p class="placeholder-text">Could not resolve lyrics securely.</p>`;
+    if (lyrics) {
+        lyricsContent.textContent = lyrics;
+    } else {
+        lyricsContent.innerHTML = `<p class="placeholder-text">Lyrics unavailable for <b>${title}</b> across public catalogs.</p>`;
     }
 }
 
