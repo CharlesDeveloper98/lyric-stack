@@ -29,6 +29,37 @@ const lyricsArtistTag = document.getElementById('lyrics-artist-tag');
 const fullscreenLyricsBtn = document.getElementById('fullscreen-lyrics-btn');
 const backToResultsBtn = document.getElementById('back-to-results-btn');
 
+
+
+// --- Dynamic Artwork Motion Toggle Logic with Persistence ---
+const artworkMotionToggle = document.getElementById('artwork-motion-toggle');
+const immersiveFullscreenView = document.getElementById('immersive-fullscreen-view');
+
+const savedMotionState = localStorage.getItem('lyricspot_artwork_motion');
+
+if (savedMotionState === 'enabled') {
+    if (artworkMotionToggle) artworkMotionToggle.checked = true;
+    if (immersiveFullscreenView) immersiveFullscreenView.classList.add('artwork-motion-active');
+} else {
+    if (artworkMotionToggle) artworkMotionToggle.checked = false;
+    if (immersiveFullscreenView) immersiveFullscreenView.classList.remove('artwork-motion-active');
+}
+
+if (artworkMotionToggle && immersiveFullscreenView) {
+    artworkMotionToggle.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            immersiveFullscreenView.classList.add('artwork-motion-active');
+            localStorage.setItem('lyricspot_artwork_motion', 'enabled');
+        } else {
+            immersiveFullscreenView.classList.remove('artwork-motion-active');
+            localStorage.setItem('lyricspot_artwork_motion', 'disabled');
+        }
+    });
+}
+
+
+
+
 // Theme Elements
 const themeButtons = document.querySelectorAll('.theme-btn');
 const bodyElement = document.body;
