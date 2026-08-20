@@ -1,3 +1,7 @@
+// ==========================================
+// LyricSpot - Main Application Script
+// ==========================================
+
 // Dynamic Views Elements
 const views = {
     home: document.getElementById('home-view'),
@@ -15,7 +19,6 @@ const searchInputWrapper = document.getElementById('search-input-wrapper');
 const searchInput = document.getElementById('search-input');
 const micBtn = document.getElementById('mic-btn');
 
-
 // Search & Lyrics Elements
 const resultsSection = document.getElementById('results-section');
 const resultsContent = document.getElementById('results-content');
@@ -26,7 +29,6 @@ const lyricsArtistTag = document.getElementById('lyrics-artist-tag');
 const fullscreenLyricsBtn = document.getElementById('fullscreen-lyrics-btn');
 const backToResultsBtn = document.getElementById('back-to-results-btn');
 
-
 // Theme Elements
 const themeButtons = document.querySelectorAll('.theme-btn');
 const bodyElement = document.body;
@@ -34,7 +36,9 @@ const bodyElement = document.body;
 let searchTimeout = null;
 
 // Ensure lyrics starts hidden
-lyricsSection.classList.add('hidden');
+if (lyricsSection) {
+    lyricsSection.classList.add('hidden');
+}
 
 // --- Navigation & Fluid Animation Handler ---
 
@@ -65,9 +69,6 @@ function expandSearchCapsule() {
     tabHome.classList.remove('active');
     tabSettings.classList.remove('active');
     searchTriggerBtn.classList.add('active');
-
-    // Removed auto-focus to prevent keyboard from popping up automatically.
-    // The keyboard will now only trigger when the user explicitly taps inside the input field.
 }
 
 function collapseSearchCapsule() {
@@ -94,10 +95,12 @@ function switchView(targetView) {
     }
 
     Object.keys(views).forEach(key => {
-        if (key === targetView) {
-            views[key].classList.remove('hidden');
-        } else {
-            views[key].classList.add('hidden');
+        if (views[key]) {
+            if (key === targetView) {
+                views[key].classList.remove('hidden');
+            } else {
+                views[key].classList.add('hidden');
+            }
         }
     });
 }
@@ -140,32 +143,38 @@ themeButtons.forEach(btn => {
 applyTheme('system');
 
 // --- Search & Lyrics Logic ---
-searchInput.addEventListener('input', (e) => {
-    const query = e.target.value.trim();
-    if (query.length === 0) {
-        resultsSection.classList.add('hidden');
-        return;
-    }
+if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.trim();
+        if (query.length === 0) {
+            resultsSection.classList.add('hidden');
+            return;
+        }
 
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-        performMusicSearch(query);
-    }, 400);
-});
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            performMusicSearch(query);
+        }, 400);
+    });
+}
 
-closeLyricsBtn.addEventListener('click', () => {
-    lyricsSection.classList.remove('fullscreen-mode');
-    lyricsSection.classList.add('hidden');
-});
+// --- Back Button Navigation Handler ---
+if (backToResultsBtn) {
+    backToResultsBtn.addEventListener('click', () => {
+        lyricsSection.classList.remove('fullscreen-mode');
+        lyricsSection.classList.add('hidden');
+        resultsSection.classList.remove('hidden'); // Restores the search results list immediately
+    });
+}
 
-fullscreenLyricsBtn.addEventListener('click', () => {
-    lyricsSection.classList.toggle('fullscreen-mode');
-    fullscreenLyricsBtn.textContent = lyricsSection.classList.contains('fullscreen-mode') 
-        ? "Exit full screen" 
-        : "See full lyrics...";
-});
-
-
+if (fullscreenLyricsBtn) {
+    fullscreenLyricsBtn.addEventListener('click', () => {
+        lyricsSection.classList.toggle('fullscreen-mode');
+        fullscreenLyricsBtn.textContent = lyricsSection.classList.contains('fullscreen-mode') 
+            ? "Exit full screen" 
+            : "See full lyrics...";
+    });
+}
 
 async function performMusicSearch(query) {
     resultsSection.classList.remove('hidden');
@@ -184,8 +193,6 @@ async function performMusicSearch(query) {
         resultsContent.innerHTML = `<p class="placeholder-text">Network connection error.</p>`;
     }
 }
-
-
 
 function renderSongList(tracks) {
     resultsContent.innerHTML = '';
@@ -211,20 +218,6 @@ function renderSongList(tracks) {
     });
 }
 
-
-
-// Add constant element mapping
-const backToResultsBtn = document.getElementById('back-to-results-btn');
-
-// --- Back Button Navigation Handler ---
-backToResultsBtn.addEventListener('click', () => {
-    lyricsSection.classList.remove('fullscreen-mode');
-    lyricsSection.classList.add('hidden');
-    resultsSection.classList.remove('hidden'); // Restores the search results list immediately
-});
-
-
-// Update fetchLyrics function to ensure results view hides cleanly
 async function fetchLyrics(artist, title) {
     resultsSection.classList.add('hidden');
     lyricsSection.classList.remove('fullscreen-mode');
@@ -248,8 +241,6 @@ async function fetchLyrics(artist, title) {
     }
 }
 
-
-
 async function fetchSecondaryLyricsSource(artist, title) {
     try {
         const res = await fetch(`https://some-random-api.com/others/lyrics?title=${encodeURIComponent(title)}`);
@@ -270,13 +261,10 @@ function escapeHTML(str) {
     );
 }
 
-
-
 // --- Dynamic Ambient Mesh Toggle Logic with Persistence ---
 const ambientMeshToggle = document.getElementById('ambient-mesh-toggle');
 const meshBgElement = document.querySelector('.mesh-bg');
 
-// 1. Check saved preference on app load (Default is OFF if nothing is saved)
 const savedMeshState = localStorage.getItem('lyricspot_ambient_mesh');
 
 if (savedMeshState === 'enabled') {
@@ -287,7 +275,6 @@ if (savedMeshState === 'enabled') {
     if (meshBgElement) meshBgElement.classList.remove('mesh-animated');
 }
 
-// 2. Listen for changes and save user preference to localStorage
 if (ambientMeshToggle && meshBgElement) {
     ambientMeshToggle.addEventListener('change', (e) => {
         if (e.target.checked) {
