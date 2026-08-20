@@ -34,6 +34,7 @@ const themeButtons = document.querySelectorAll('.theme-btn');
 const bodyElement = document.body;
 
 let searchTimeout = null;
+let currentActiveArtworkUrl = ''; // Tracks the active song's specific artwork URL
 
 if (lyricsSection) {
     lyricsSection.classList.add('hidden');
@@ -182,10 +183,7 @@ if (backToResultsBtn) {
 
 if (fullscreenLyricsBtn) {
     fullscreenLyricsBtn.addEventListener('click', () => {
-        lyricsSection.classList.toggle('fullscreen-mode');
-        fullscreenLyricsBtn.textContent = lyricsSection.classList.contains('fullscreen-mode') 
-            ? "Exit full screen" 
-            : "See full lyrics...";
+        openImmersiveFullScreen();
     });
 }
 
@@ -275,7 +273,8 @@ function renderSongList(tracks) {
         const item = document.createElement('div');
         item.className = 'song-item';
         
-        const artworkUrl = track.artworkUrl100 ? track.artworkUrl100.replace('100x100bb', '200x200bb') : 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=200';
+        // Upgrade thumbnail URL to higher resolution (600x600) for full screen display
+        const artworkUrl = track.artworkUrl100 ? track.artworkUrl100.replace('100x100bb', '600x600bb') : 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=600';
 
         item.innerHTML = `
             <span class="availability-dot" id="dot-${index}" title="Checking..."></span>
@@ -301,6 +300,9 @@ function renderSongList(tracks) {
         });
 
         item.addEventListener('click', () => {
+            // Bind this specific song's high-res artwork to the global variable
+            currentActiveArtworkUrl = artworkUrl;
+
             resultsSection.style.transition = 'transform 0.3s ease, opacity 0.25s ease';
             resultsSection.style.transform = 'translateX(-40px)';
             resultsSection.style.opacity = '0';
@@ -317,9 +319,6 @@ function renderSongList(tracks) {
     });
 }
 
-
-
-
 // --- Immersive Full-Screen Elements ---
 const immersiveView = document.getElementById('immersive-fullscreen-view');
 const immersiveBackBtn = document.getElementById('immersive-back-btn');
@@ -327,13 +326,6 @@ const immersiveArtwork = document.getElementById('immersive-artwork');
 const immersiveSongTitle = document.getElementById('immersive-song-title');
 const immersiveArtistName = document.getElementById('immersive-artist-name');
 const immersiveLyricsContent = document.getElementById('immersive-lyrics-content');
-
-// Attach listener to open full screen when "See full lyrics..." is clicked
-if (fullscreenLyricsBtn) {
-    fullscreenLyricsBtn.addEventListener('click', () => {
-        openImmersiveFullScreen();
-    });
-}
 
 // Attach listener to close full screen when back chevron is tapped
 if (immersiveBackBtn) {
@@ -350,10 +342,9 @@ function openImmersiveFullScreen() {
     immersiveArtistName.textContent = lyricsArtistTag.textContent;
     immersiveLyricsContent.innerHTML = lyricsContent.innerHTML;
 
-    // Grab current track artwork from active item or cache if available
-    const activeThumb = document.querySelector('.song-thumb');
-    if (activeThumb) {
-        immersiveArtwork.src = activeThumb.src;
+    // Assign the exact targeted track's high-resolution artwork
+    if (currentActiveArtworkUrl) {
+        immersiveArtwork.src = currentActiveArtworkUrl;
     }
 
     immersiveView.classList.remove('hidden');
@@ -365,10 +356,6 @@ function closeImmersiveFullScreen() {
     immersiveView.classList.add('hidden');
     document.body.style.overflow = '';
 }
-
-
-
-
 
 async function fetchAndDisplayLyrics(artist, title, durationMs) {
     lyricsSection.classList.remove('hidden');
