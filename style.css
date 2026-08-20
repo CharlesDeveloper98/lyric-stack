@@ -253,7 +253,7 @@ body {
 .liquid-back-btn {
     width: 40px;
     height: 40px;
-    border-radius: 14px; /* Matches modern iOS squircle card/pill radius */
+    border-radius: 14px;
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
     backdrop-filter: blur(20px) saturate(180%);
@@ -277,11 +277,12 @@ body {
 }
 
 .chevron-icon {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     filter: var(--icon-filter);
     opacity: 0.9;
 }
+
 
 
 /* Liquid Glass "See full lyrics..." Action Pill Container */
