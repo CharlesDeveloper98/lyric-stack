@@ -338,6 +338,9 @@ function toggleTrackPlayback(track, playBtnImgElement) {
         currentPlayingTrackId = track.trackId;
         activeAudioElement = new Audio(previewUrl);
         
+        // Force audio playback to start strictly from the beginning
+        activeAudioElement.currentTime = 0;
+
         activeAudioElement.play().then(() => {
             playBtnImgElement.src = "assets/playing.png";
             updateImmersivePlayIconState(true);
@@ -347,6 +350,7 @@ function toggleTrackPlayback(track, playBtnImgElement) {
             updateImmersivePlayIconState(false);
         });
 
+        // Automatically reset play button states when the stream preview finishes
         activeAudioElement.addEventListener('ended', () => {
             playBtnImgElement.src = "assets/pause.png";
             updateImmersivePlayIconState(false);
@@ -354,6 +358,7 @@ function toggleTrackPlayback(track, playBtnImgElement) {
         });
     }
 }
+
 
 function updateImmersivePlayIconState(isPlaying) {
     if (!immersivePlayIcon) return;
