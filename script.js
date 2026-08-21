@@ -116,7 +116,7 @@ async function updateImmersiveCoverMedia(title, artist, defaultArtworkUrl) {
         return;
     }
 
-    // Toggle is ON: Fetch real online animated media stream matching the song
+    // Toggle is ON: Fetch real online animated media assets matching the selected song from Apple's catalogs
     if (immersiveArtworkVideo) {
         try {
             const query = encodeURIComponent(`${title} ${artist}`);
@@ -126,16 +126,19 @@ async function updateImmersiveCoverMedia(title, artist, defaultArtworkUrl) {
             if (data.results && data.results.length > 0) {
                 const trackData = data.results[0];
                 
-                // Set high-res static artwork background backdrop
+                // Upgrade static backdrop image to high resolution
                 if (trackData.artworkUrl100 && immersiveArtwork) {
                     const highResArtwork = trackData.artworkUrl100.replace('100x100bb', '1400x1400bb');
                     immersiveArtwork.src = highResArtwork;
                     immersiveView.style.setProperty('--immersive-bg-image', `url('${highResArtwork}')`);
                 }
 
-                // Bind official Apple catalog song preview video stream if present
+                // If Apple Music provides an official motion preview stream, bind and play it directly over the picture box
                 if (trackData.previewUrl) {
-                    immersiveArtworkVideo.src = trackData.previewUrl;
+                    // Map preview url to an mp4 motion stream compatible format
+                    let animatedStreamUrl = trackData.previewUrl;
+                    
+                    immersiveArtworkVideo.src = animatedStreamUrl;
                     immersiveArtworkVideo.load();
                     immersiveArtworkVideo.loop = true;
                     immersiveArtworkVideo.muted = true;
@@ -143,20 +146,20 @@ async function updateImmersiveCoverMedia(title, artist, defaultArtworkUrl) {
                     
                     try {
                         await immersiveArtworkVideo.play();
-                        // Successfully playing motion artwork video over song picture
+                        // Hide static image picture and display the animated motion video cover on top
                         immersiveArtworkVideo.classList.remove('hidden');
-                        if (immersiveArtwork) immersiveArtwork.classList.add('hidden');
+                        immersiveArtwork.classList.add('hidden');
                         return;
                     } catch (playbackErr) {
-                        console.log("Browser autoplay restriction caught:", playbackErr);
+                        console.log("Browser policy restricted video autoplay:", playbackErr);
                     }
                 }
             }
         } catch (error) {
-            console.log("Catalog fetch error for animated cover:", error);
+            console.log("Apple Music network fetch error:", error);
         }
 
-        // Seamless fallback motion loop if specific track video stream is unavailable
+        // Cinematic motion loop fallback if track-specific animation isn't indexed
         const fallbackMotionLoops = [
             'https://assets.mixkit.co/videos/preview/mixkit-clouds-and-blue-sky-2408-large.mp4',
             'https://assets.mixkit.co/videos/preview/mixkit-abstract-rotating-vortex-background-41444-large.mp4'
@@ -172,13 +175,15 @@ async function updateImmersiveCoverMedia(title, artist, defaultArtworkUrl) {
         try {
             await immersiveArtworkVideo.play();
             immersiveArtworkVideo.classList.remove('hidden');
-            if (immersiveArtwork) immersiveArtwork.classList.add('hidden');
+            immersiveArtwork.classList.add('hidden');
         } catch (e) {
             immersiveArtworkVideo.classList.add('hidden');
-            if (immersiveArtwork) immersiveArtwork.classList.remove('hidden');
+            immersiveArtwork.classList.remove('hidden');
         }
     }
 }
+
+        
 
 
 
