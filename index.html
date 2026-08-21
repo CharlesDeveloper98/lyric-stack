@@ -14,9 +14,6 @@
         <div class="blob blob-3"></div>
     </div>
 
-    <!-- Global Audio Player Engine -->
-    <audio id="audio-player" preload="none"></audio>
-
     <main class="app-container">
         <!-- Header -->
         <header class="app-header">
@@ -130,6 +127,7 @@
                     </div>
                 </div>
             </div>
+
         </section>
     </main>
 
@@ -138,30 +136,29 @@
         <div class="immersive-hero">
             <img id="immersive-artwork" src="" alt="Music Picture">
             <video id="immersive-artwork-video" class="hidden" autoplay loop muted playsinline></video>
+            
+            <!-- Red Circled Area: Play Button inside a Liquid Container -->
+            <div class="immersive-liquid-play-container">
+                <button id="immersive-play-btn" class="liquid-play-pill" title="Play / Pause">
+                    <img id="immersive-play-icon" src="assets/pause.png" alt="Play/Pause State" class="play-btn-asset">
+                </button>
+            </div>
+
             <div class="immersive-header-overlay">
                 <div class="immersive-back-btn" id="immersive-back-btn" title="Exit full screen">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                 </div>
             </div>
             <div class="immersive-hero-gradient"></div>
-            
             <div class="immersive-title-box">
-                <div class="immersive-title-row">
-                    <div>
-                        <h1 id="immersive-song-title">Song Title</h1>
-                        <p id="immersive-artist-name">Artist Name</p>
-                    </div>
-                    <!-- Liquid Container Play Button -->
-                    <button id="immersive-play-btn" class="liquid-play-pill" title="Play / Pause">
-                        <img src="assets/pause.png" alt="Play/Pause" id="immersive-play-icon" class="control-icon">
-                    </button>
-                </div>
+                <h1 id="immersive-song-title">Song Title</h1>
+                <p id="immersive-artist-name">Artist Name</p>
             </div>
+        </div>
 
-            <div class="immersive-lyrics-scroll-container">
-                <div id="immersive-lyrics-content">
-                    <!-- Lyrics populate here -->
-                </div>
+        <div class="immersive-lyrics-scroll-container">
+            <div id="immersive-lyrics-content">
+                <!-- Lyrics populate here -->
             </div>
         </div>
     </div>
