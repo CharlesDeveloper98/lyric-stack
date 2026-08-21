@@ -67,7 +67,6 @@ async function getFullSongAudioStreamUrl(artist, title) {
             const searchData = await searchRes.json();
             
             if (searchData && searchData.items && searchData.items.length > 0) {
-                // Find the best matching audio stream
                 for (let i = 0; i < Math.min(searchData.items.length, 3); i++) {
                     const videoId = searchData.items[i].url.split('/watch?v=')[1];
                     if (videoId) {
@@ -585,14 +584,15 @@ async function openImmersiveFullScreen() {
     document.body.style.overflow = 'hidden';
 }
 
-// --- Strict Isolated Animated Cover Resolver ---
+// --- Cover Media Resolver with Animated Moving/Dimming Static Fallback ---
 async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
     if (!immersiveArtworkVideo || !immersiveArtwork || !immersiveView) return;
 
     const isAnimatedEnabled = localStorage.getItem('lyricspot_animated_cover') === 'enabled';
 
-    // Default state setup first to clear previous caches
+    // Clear stale styles or backgrounds upfront
     immersiveView.style.setProperty('--immersive-bg-image', `url('${defaultArtworkUrl}')`);
+    immersiveArtwork.classList.remove('static-picture-animated');
 
     if (!isAnimatedEnabled) {
         immersiveArtwork.src = defaultArtworkUrl;
@@ -630,7 +630,7 @@ async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
         console.log("Online animated cover lookup exception:", e);
     }
 
-    // If no video or clip exists online for this specific track, strictly fallback to static picture
+    // If no online video exists for this track, use its default picture with smooth floating motion and dimming
     if (!resolvedVideoStreamUrl) {
         immersiveArtworkVideo.pause();
         immersiveArtworkVideo.removeAttribute('src');
@@ -638,6 +638,7 @@ async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
         immersiveArtworkVideo.classList.add('hidden');
         
         immersiveArtwork.src = defaultArtworkUrl;
+        immersiveArtwork.classList.add('static-picture-animated');
         immersiveArtwork.classList.remove('hidden');
         return;
     }
@@ -661,6 +662,7 @@ async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
         immersiveArtworkVideo.classList.add('hidden');
         
         immersiveArtwork.src = defaultArtworkUrl;
+        immersiveArtwork.classList.add('static-picture-animated');
         immersiveArtwork.classList.remove('hidden');
     }
 }
@@ -672,6 +674,9 @@ function closeImmersiveFullScreen() {
         immersiveArtworkVideo.pause();
         immersiveArtworkVideo.removeAttribute('src');
         immersiveArtworkVideo.load();
+    }
+    if (immersiveArtwork) {
+        immersiveArtwork.classList.remove('static-picture-animated');
     }
     document.body.style.overflow = '';
 }
