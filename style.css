@@ -893,30 +893,50 @@ body {
 
 
 
-/* Ensure crystal clear view for static artwork fallback with smooth floating motion */
+/* Crystal Clear Floating & Brightness/Dimming Breathing Animation */
 @keyframes staticPictureDynamicMotion {
     0% {
-        transform: scale(1.03) translate(0px, 0px);
+        transform: scale(1.06) translate(0px, 0px);
+        filter: brightness(1) contrast(1.02);
     }
     25% {
-        transform: scale(1.08) translate(-8px, -6px);
+        transform: scale(1.12) translate(-14px, -10px);
+        filter: brightness(0.75) contrast(1.05); /* Dimming effect */
     }
     50% {
-        transform: scale(1.05) translate(6px, -10px);
+        transform: scale(1.08) translate(10px, -14px);
+        filter: brightness(1.1) contrast(1.02);  /* Brightness effect */
     }
     75% {
-        transform: scale(1.08) translate(8px, 6px);
+        transform: scale(1.12) translate(12px, 10px);
+        filter: brightness(0.8) contrast(1.05);  /* Dimming effect */
     }
     100% {
-        transform: scale(1.03) translate(0px, 0px);
+        transform: scale(1.06) translate(0px, 0px);
+        filter: brightness(1) contrast(1.02);
     }
 }
 
 .static-picture-animated {
     animation: staticPictureDynamicMotion 14s ease-in-out infinite;
     object-fit: cover;
-    filter: none !important; /* Removes any unwanted blur or dark filter */
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1; /* Sits right behind metadata/lyrics overlay */
+    pointer-events: none;
+    backdrop-filter: none !important;
 }
+
+/* Ensure immersive background wrapper doesn't force a dark blur fallback image */
+#immersive-fullscreen-view {
+    background-color: #0b0b0b !important;
+    backdrop-filter: none !important;
+}
+
+
 
 
 
