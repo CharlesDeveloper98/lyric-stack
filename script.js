@@ -471,16 +471,18 @@ function renderSongList(tracks) {
                     if (prevIcon) prevIcon.src = 'assets/pause.png';
                 }
 
-                currentPlayingIndex = index;
+                                currentPlayingIndex = index;
                 currentPreviewUrl = track.previewUrl;
                 
                 if (currentPreviewUrl && audioPlayer) {
                     audioPlayer.src = currentPreviewUrl;
+                    audioPlayer.currentTime = 0; // Force playback from the beginning
                     audioPlayer.play();
                     if (rowIcon) rowIcon.src = 'assets/playing.png';
                 } else {
                     alert("Audio preview unavailable for this track.");
                 }
+
             }
         });
 
