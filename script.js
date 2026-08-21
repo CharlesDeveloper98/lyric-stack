@@ -584,13 +584,13 @@ async function openImmersiveFullScreen() {
     document.body.style.overflow = 'hidden';
 }
 
-// --- Cover Media Resolver with Crystal Clear Moving Static Fallback ---
+// --- Cover Media Resolver with Clear Animated Static Fallback ---
 async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
     if (!immersiveArtworkVideo || !immersiveArtwork || !immersiveView) return;
 
     const isAnimatedEnabled = localStorage.getItem('lyricspot_animated_cover') === 'enabled';
 
-    // Clear stale styles or backgrounds upfront
+    // Clear stale styles upfront
     immersiveView.style.setProperty('--immersive-bg-image', `url('${defaultArtworkUrl}')`);
     immersiveArtwork.classList.remove('static-picture-animated');
 
@@ -616,7 +616,6 @@ async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
         if (mvData.results && mvData.results.length > 0 && mvData.results[0].previewUrl) {
             resolvedVideoStreamUrl = mvData.results[0].previewUrl;
         } else {
-            // Check standard song entities for built-in preview clips
             const trackRes = await fetch(`https://itunes.apple.com/search?term=${queryTerm}&entity=song&limit=3`);
             const trackData = await trackRes.json();
             if (trackData.results) {
@@ -630,7 +629,7 @@ async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
         console.log("Online animated cover lookup exception:", e);
     }
 
-    // If no online video exists, use crystal clear picture with smooth animated motion
+    // If no video exists, show the crystal-clear default picture with smooth floating motion
     if (!resolvedVideoStreamUrl) {
         immersiveArtworkVideo.pause();
         immersiveArtworkVideo.removeAttribute('src');
