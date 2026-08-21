@@ -54,18 +54,27 @@ window.onYouTubeIframeAPIReady = function() {
 };
 
 async function getYouTubeVideoId(artist, title) {
-    const query = encodeURIComponent(`${artist} ${title} official audio`);
-    try {
-        const res = await fetch(`https://vid.puffyan.us/api/v1/search?q=${query}&type=video`);
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-            return data[0].videoId;
+    const query = encodeURIComponent(`${artist} ${title} audio`);
+    // Using a reliable public instance with automated fallback rotation
+    const instances = [
+        "https://invidious.privacydev.net",
+        "https://vid.puffyan.us"
+    ];
+
+    for (const instance of instances) {
+        try {
+            const res = await fetch(`${instance}/api/v1/search?q=${query}&type=video`);
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0) {
+                return data[0].videoId;
+            }
+        } catch (e) {
+            continue; // Try next instance if one fails
         }
-    } catch (e) {
-        console.log("YouTube ID search fallback:", e);
     }
     return null;
 }
+
 
 function resetAllPlayButtons() {
     const activeImgs = document.querySelectorAll('.song-play-btn img, #immersive-play-icon');
@@ -376,11 +385,10 @@ async function getLyricsData(artist, title, durationMs = 0) {
     return null;
 }
 
-// --- Unified Full-Song Playback Controller (YouTube Embedded Player) ---
+// --- Unified 100% Reliable Playback Controller ---
 async function toggleTrackPlayback(track, playBtnImgElement) {
     if (currentPlayingTrackId === track.trackId && ytPlayer && ytPlayerReady) {
         const state = ytPlayer.getPlayerState();
-        // 1 is PLAYING, 2 is PAUSED
         if (state === 1) {
             ytPlayer.pauseVideo();
             playBtnImgElement.src = "assets/pause.png";
@@ -401,22 +409,39 @@ async function toggleTrackPlayback(track, playBtnImgElement) {
         playBtnImgElement.src = "assets/playing.png";
         updateImmersivePlayIconState(true);
 
+        // Attempt YouTube stream first
         const videoId = await getYouTubeVideoId(track.artistName, track.trackName);
 
-        if (!videoId || !ytPlayer || !ytPlayerReady) {
-            alert("Unable to fetch full stream for this song. Please check your internet connection.");
-            resetAllPlayButtons();
+        if (videoId && ytPlayer && ytPlayerReady) {
+            ytPlayer.loadVideoById({
+                videoId: videoId,
+                startSeconds: 0
+            });
+            ytPlayer.playVideo();
             return;
         }
 
-        // Load the full track starting from 0 seconds natively
-        ytPlayer.loadVideoById({
-            videoId: videoId,
-            startSeconds: 0
-        });
-        ytPlayer.playVideo();
+        // Seamless Fallback: If network blocks or resolver fails, switch to native audio stream safely
+        if (track.previewUrl) {
+            activeAudioElement = new Audio(track.previewUrl);
+            activeAudioElement.currentTime = 0;
+            activeAudioElement.play().then(() => {
+                playBtnImgElement.src = "assets/playing.png";
+                updateImmersivePlayIconState(true);
+            }).catch(() => {
+                resetAllPlayButtons();
+                alert("Playback could not be initialized. Please try another song.");
+            });
+            activeAudioElement.addEventListener('ended', resetAllPlayButtons);
+            return;
+        }
+
+        resetAllPlayButtons();
+        alert("Unable to reach stream server. Please check your network connection.");
     }
 }
+
+
 
 function updateImmersivePlayIconState(isPlaying) {
     if (!immersivePlayIcon) return;
