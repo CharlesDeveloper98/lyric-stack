@@ -6,6 +6,73 @@
 let activeAudioElement = null;
 let currentPlayingTrackId = null;
 
+// --- Hidden YouTube IFrame Audio Player Controller ---
+let ytPlayer = null;
+let ytPlayerReady = false;
+
+// Inject YouTube IFrame API script dynamically if not present
+if (!window.YT) {
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(tag);
+}
+
+// Global callback required by YouTube IFrame API
+window.onYouTubeIframeAPIReady = function() {
+    let container = document.getElementById('hidden-yt-player-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'hidden-yt-player-container';
+        container.style.cssText = 'position:absolute; width:0; height:0; overflow:hidden; opacity:0; pointer-events:none;';
+        document.body.appendChild(container);
+    }
+    
+    const playerDiv = document.createElement('div');
+    playerDiv.id = 'yt-audio-player';
+    container.appendChild(playerDiv);
+
+    ytPlayer = new YT.Player('yt-audio-player', {
+        height: '0',
+        width: '0',
+        playerVars: {
+            'autoplay': 0,
+            'controls': 0,
+            'playsinline': 1
+        },
+        events: {
+            'onReady': (event) => {
+                ytPlayerReady = true;
+            },
+            'onStateChange': (event) => {
+                // When song finishes playing (YT.PlayerState.ENDED is 0)
+                if (event.data === 0) {
+                    resetAllPlayButtons();
+                }
+            }
+        }
+    });
+};
+
+async function getYouTubeVideoId(artist, title) {
+    const query = encodeURIComponent(`${artist} ${title} audio`);
+    try {
+        const res = await fetch(`https://vid.puffyan.us/api/v1/search?q=${query}&type=video`);
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+            return data[0].videoId;
+        }
+    } catch (e) {
+        console.log("YouTube ID search fallback:", e);
+    }
+    return null;
+}
+
+function resetAllPlayButtons() {
+    const activeImgs = document.querySelectorAll('.song-play-btn img, #immersive-play-icon');
+    activeImgs.forEach(img => img.src = "assets/pause.png");
+    currentPlayingTrackId = null;
+}
+
 // Dynamic Views Elements
 const views = {
     home: document.getElementById('home-view'),
@@ -309,96 +376,58 @@ async function getLyricsData(artist, title, durationMs = 0) {
     return null;
 }
 
-// --- YouTube Full Song Streaming Controller ---
-async function getYouTubeAudioStream(artist, title) {
-    const query = encodeURIComponent(`${artist} ${title} audio`);
-    try {
-        // Query public Invidious API instances to find the matching YouTube video ID
-        const res = await fetch(`https://vid.puffyan.us/api/v1/search?q=${query}&type=video`);
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-            const videoId = data[0].videoId;
-            // Fetch direct audio/media stream sources from the video
-            const streamRes = await fetch(`https://vid.puffyan.us/api/v1/videos/${videoId}`);
-            const streamData = await streamRes.json();
-            
-            // Filter adaptive audio streams or fallback to regular playback streams
-            if (streamData.adaptiveFormats && streamData.adaptiveFormats.length > 0) {
-                const audioStream = streamData.adaptiveFormats.find(f => f.type && f.type.includes('audio/webm') || f.type.includes('audio/mp4'));
-                if (audioStream && audioStream.url) {
-                    return audioStream.url;
-                }
-            }
-            if (streamData.formatStreams && streamData.formatStreams.length > 0) {
-                return streamData.formatStreams[0].url;
-            }
-        }
-    } catch (e) {
-        console.log("YouTube stream lookup fallback triggered:", e);
-    }
-    return null;
-}
-
-// --- Unified Audio Playback Controller (Full Songs) ---
+// --- Unified Full-Song Playback Controller (YouTube Iframe) ---
 async function toggleTrackPlayback(track, playBtnImgElement) {
-    if (currentPlayingTrackId === track.trackId && activeAudioElement) {
-        if (activeAudioElement.paused) {
-            activeAudioElement.play();
+    if (currentPlayingTrackId === track.trackId && ytPlayer && ytPlayerReady) {
+        const state = ytPlayer.getPlayerState();
+        // 1 is PLAYING, 2 is PAUSED
+        if (state === 1) {
+            ytPlayer.pauseVideo();
+            playBtnImgElement.src = "assets/pause.png";
+            updateImmersivePlayIconState(false);
+        } else {
+            ytPlayer.playVideo();
             playBtnImgElement.src = "assets/playing.png";
             updateImmersivePlayIconState(true);
-        } else {
-            activeAudioElement.pause();
-            playBtnImgElement.src = "assets/pause.png";
-            updateImmersivePlayIconState(false);
         }
     } else {
-        // Stop any currently playing track
+        // Stop any current audio element preview if running
         if (activeAudioElement) {
             activeAudioElement.pause();
-            const previousBtn = document.querySelector(`.song-play-btn[data-track-id="${currentPlayingTrackId}"] img`);
-            if (previousBtn) previousBtn.src = "assets/pause.png";
+            activeAudioElement = null;
         }
 
+        resetAllPlayButtons();
         currentPlayingTrackId = track.trackId;
-        playBtnImgElement.src = "assets/playing.png"; // Show loading state visually if needed
+        playBtnImgElement.src = "assets/playing.png";
         updateImmersivePlayIconState(true);
 
-        // Fetch full-length audio stream URL from YouTube source
-        const fullAudioUrl = await getYouTubeAudioStream(track.artistName, track.trackName);
-        
-        // Fallback to iTunes preview if YouTube stream fails or is blocked
-        const streamSource = fullAudioUrl || track.previewUrl;
+        // Fetch matching YouTube Video ID
+        const videoId = await getYouTubeVideoId(track.artistName, track.trackName);
 
-        if (!streamSource) {
-            alert("Unable to stream full audio for this track.");
-            playBtnImgElement.src = "assets/pause.png";
-            updateImmersivePlayIconState(false);
-            currentPlayingTrackId = null;
+        if (!videoId || !ytPlayer || !ytPlayerReady) {
+            // Fallback to iTunes 30s preview if video search fails
+            if (track.previewUrl) {
+                if (activeAudioElement) activeAudioElement.pause();
+                activeAudioElement = new Audio(track.previewUrl);
+                activeAudioElement.currentTime = 0;
+                activeAudioElement.play();
+                activeAudioElement.addEventListener('ended', resetAllPlayButtons);
+                return;
+            }
+            alert("Unable to load full-length stream for this track.");
+            resetAllPlayButtons();
             return;
         }
 
-        activeAudioElement = new Audio(streamSource);
-        activeAudioElement.currentTime = 0;
-
-        activeAudioElement.play().then(() => {
-            playBtnImgElement.src = "assets/playing.png";
-            updateImmersivePlayIconState(true);
-        }).catch(err => {
-            console.error("Playback restriction:", err);
-            playBtnImgElement.src = "assets/pause.png";
-            updateImmersivePlayIconState(false);
+        // Load and play the full track natively from YouTube
+        ytPlayer.loadVideoById({
+            videoId: videoId,
+            startSeconds: 0
         });
-
-        // Automatically reset play button states when the song finishes
-        activeAudioElement.addEventListener('ended', () => {
-            playBtnImgElement.src = "assets/pause.png";
-            updateImmersivePlayIconState(false);
-            currentPlayingTrackId = null;
-        });
+        ytPlayer.playVideo();
     }
 }
-
-
 
 function updateImmersivePlayIconState(isPlaying) {
     if (!immersivePlayIcon) return;
@@ -407,12 +436,11 @@ function updateImmersivePlayIconState(isPlaying) {
 
 if (immersivePlayBtn) {
     immersivePlayBtn.addEventListener('click', () => {
-        if (!currentActiveTrackData || !currentActiveTrackData.previewUrl) return;
+        if (!currentActiveTrackData) return;
         const matchingRowBtnImg = document.querySelector(`.song-play-btn[data-track-id="${currentActiveTrackData.trackId}"] img`);
         if (matchingRowBtnImg) {
             toggleTrackPlayback(currentActiveTrackData, matchingRowBtnImg);
         } else {
-            // Fallback if triggered without list context reference
             toggleTrackPlayback(currentActiveTrackData, immersivePlayIcon);
         }
     });
@@ -497,8 +525,8 @@ function openImmersiveFullScreen() {
     immersiveArtistName.textContent = artistNameText;
     immersiveLyricsContent.innerHTML = lyricsContent.innerHTML;
 
-    // Sync play button icon state in immersive view based on active audio engine
-    if (activeAudioElement && !activeAudioElement.paused && currentActiveTrackData) {
+    // Sync play button icon state in immersive view based on active player
+    if (currentPlayingTrackId && ytPlayer && ytPlayerReady && ytPlayer.getPlayerState() === 1) {
         updateImmersivePlayIconState(true);
     } else {
         updateImmersivePlayIconState(false);
