@@ -54,7 +54,7 @@ window.onYouTubeIframeAPIReady = function() {
 
 async function getFullSongAudioStreamUrl(artist, title) {
     const cleanTitleText = cleanTitleForQuery(title);
-    const query = encodeURIComponent(`${artist} ${cleanTitleText} full song audio`);
+    const query = encodeURIComponent(`${artist} ${cleanTitleText} official audio full track`);
     const pipedInstances = [
         "https://pipedapi.kavin.rocks",
         "https://pipedapi.privacy.com.de",
@@ -67,16 +67,19 @@ async function getFullSongAudioStreamUrl(artist, title) {
             const searchData = await searchRes.json();
             
             if (searchData && searchData.items && searchData.items.length > 0) {
-                const videoId = searchData.items[0].url.split('/watch?v=')[1];
-                if (videoId) {
-                    const streamRes = await fetch(`${instance}/streams/${videoId}`, { signal: AbortSignal.timeout(4000) });
-                    const streamData = await streamRes.json();
-                    
-                    if (streamData && streamData.audioStreams && streamData.audioStreams.length > 0) {
-                        const audioStreams = streamData.audioStreams.filter(s => s.url);
-                        audioStreams.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
-                        if (audioStreams.length > 0) {
-                            return audioStreams[0].url;
+                // Find the best matching audio stream
+                for (let i = 0; i < Math.min(searchData.items.length, 3); i++) {
+                    const videoId = searchData.items[i].url.split('/watch?v=')[1];
+                    if (videoId) {
+                        const streamRes = await fetch(`${instance}/streams/${videoId}`, { signal: AbortSignal.timeout(4000) });
+                        const streamData = await streamRes.json();
+                        
+                        if (streamData && streamData.audioStreams && streamData.audioStreams.length > 0) {
+                            const audioStreams = streamData.audioStreams.filter(s => s.url);
+                            audioStreams.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
+                            if (audioStreams.length > 0) {
+                                return audioStreams[0].url;
+                            }
                         }
                     }
                 }
@@ -401,7 +404,7 @@ async function getLyricsData(artist, title, durationMs = 0) {
     return null;
 }
 
-// --- Unified Full-Track Stream Playback Handler ---
+// --- Unified Full-Track Stream Playback Handler with Auto-Recovery ---
 async function toggleTrackPlayback(track, playBtnImgElement) {
     if (currentPlayingTrackId === track.trackId) {
         if (activeAudioElement) {
@@ -553,7 +556,7 @@ if (immersiveBackBtn) {
     });
 }
 
-// --- Open Immersive Full-Screen View with Instant Media Resolution ---
+// --- Open Immersive Full-Screen View ---
 async function openImmersiveFullScreen() {
     if (!immersiveView) return;
 
@@ -570,7 +573,6 @@ async function openImmersiveFullScreen() {
     }
     updateImmersivePlayIconState(isPlayingActive);
 
-    // Preload cover media synchronously before showing view to avoid image-to-video flashing
     await prepareAndOpenImmersiveView(songTitleText, artistNameText, currentActiveArtworkUrl);
 
     if (localStorage.getItem('lyricspot_artwork_motion') === 'enabled') {
@@ -583,19 +585,22 @@ async function openImmersiveFullScreen() {
     document.body.style.overflow = 'hidden';
 }
 
-// --- Advanced Universal Animated Cover Resolver & Preloader ---
+// --- Strict Isolated Animated Cover Resolver ---
 async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
     if (!immersiveArtworkVideo || !immersiveArtwork || !immersiveView) return;
 
     const isAnimatedEnabled = localStorage.getItem('lyricspot_animated_cover') === 'enabled';
 
+    // Default state setup first to clear previous caches
+    immersiveView.style.setProperty('--immersive-bg-image', `url('${defaultArtworkUrl}')`);
+
     if (!isAnimatedEnabled) {
         immersiveArtwork.src = defaultArtworkUrl;
         immersiveArtwork.classList.remove('hidden');
         immersiveArtworkVideo.pause();
-        immersiveArtworkVideo.src = '';
+        immersiveArtworkVideo.removeAttribute('src');
+        immersiveArtworkVideo.load();
         immersiveArtworkVideo.classList.add('hidden');
-        immersiveView.style.setProperty('--immersive-bg-image', `url('${defaultArtworkUrl}')`);
         return;
     }
 
@@ -605,16 +610,14 @@ async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
         const cleanName = cleanTitleForQuery(title);
         const queryTerm = encodeURIComponent(`${cleanName} ${artist}`);
         
-        // Tier 1: Search Apple Music Video catalog
+        // Query official music video preview catalog
         const mvRes = await fetch(`https://itunes.apple.com/search?term=${queryTerm}&entity=musicVideo&limit=1`);
         const mvData = await mvRes.json();
         if (mvData.results && mvData.results.length > 0 && mvData.results[0].previewUrl) {
             resolvedVideoStreamUrl = mvData.results[0].previewUrl;
-        }
-
-        // Tier 2: Search standard track entities with preview clip assets if MV is missing
-        if (!resolvedVideoStreamUrl) {
-            const trackRes = await fetch(`https://itunes.apple.com/search?term=${queryTerm}&entity=song&limit=5`);
+        } else {
+            // Check standard song entities for built-in preview clips
+            const trackRes = await fetch(`https://itunes.apple.com/search?term=${queryTerm}&entity=song&limit=3`);
             const trackData = await trackRes.json();
             if (trackData.results) {
                 const validMatch = trackData.results.find(item => item.previewUrl);
@@ -627,23 +630,19 @@ async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
         console.log("Online animated cover lookup exception:", e);
     }
 
-    // Tier 3: Advanced Universal Algorithmic Loop Pool to guarantee 100% coverage for any song
+    // If no video or clip exists online for this specific track, strictly fallback to static picture
     if (!resolvedVideoStreamUrl) {
-        const universalFallbackLoops = [
-            'https://assets.mixkit.co/videos/preview/mixkit-abstract-liquid-background-animation-31932-large.mp4',
-            'https://assets.mixkit.co/videos/preview/mixkit-digital-animation-of-screens-and-lights-31933-large.mp4',
-            'https://assets.mixkit.co/videos/preview/mixkit-kaleidoscopic-tunnel-of-neon-lights-41584-large.mp4',
-            'https://assets.mixkit.co/videos/preview/mixkit-music-equalizer-background-animation-41908-large.mp4'
-        ];
-        // Hash title code to pick a consistent dynamic loop for the track
-        let hash = 0;
-        for (let i = 0; i < title.length; i++) {
-            hash = title.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        resolvedVideoStreamUrl = universalFallbackLoops[Math.abs(hash) % universalFallbackLoops.length];
+        immersiveArtworkVideo.pause();
+        immersiveArtworkVideo.removeAttribute('src');
+        immersiveArtworkVideo.load();
+        immersiveArtworkVideo.classList.add('hidden');
+        
+        immersiveArtwork.src = defaultArtworkUrl;
+        immersiveArtwork.classList.remove('hidden');
+        return;
     }
 
-    // Prepare video element in background memory before revealing window
+    // Load and play resolved video stream
     try {
         immersiveArtworkVideo.src = resolvedVideoStreamUrl;
         immersiveArtworkVideo.load();
@@ -655,13 +654,14 @@ async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
         
         immersiveArtworkVideo.classList.remove('hidden');
         immersiveArtwork.classList.add('hidden');
-        immersiveView.style.setProperty('--immersive-bg-image', `url('${defaultArtworkUrl}')`);
     } catch (err) {
-        // Ultimate fallback to static cover if autoplay policies block video
+        immersiveArtworkVideo.pause();
+        immersiveArtworkVideo.removeAttribute('src');
+        immersiveArtworkVideo.load();
         immersiveArtworkVideo.classList.add('hidden');
+        
         immersiveArtwork.src = defaultArtworkUrl;
         immersiveArtwork.classList.remove('hidden');
-        immersiveView.style.setProperty('--immersive-bg-image', `url('${defaultArtworkUrl}')`);
     }
 }
 
@@ -670,7 +670,8 @@ function closeImmersiveFullScreen() {
     immersiveView.classList.add('hidden');
     if (immersiveArtworkVideo) {
         immersiveArtworkVideo.pause();
-        immersiveArtworkVideo.src = '';
+        immersiveArtworkVideo.removeAttribute('src');
+        immersiveArtworkVideo.load();
     }
     document.body.style.overflow = '';
 }
