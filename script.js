@@ -2,6 +2,10 @@
 // LyricSpot - Main Application Script
 // ==========================================
 
+// Global Audio Element and Active Tracking State
+let activeAudioElement = null;
+let currentPlayingTrackId = null;
+
 // Dynamic Views Elements
 const views = {
     home: document.getElementById('home-view'),
@@ -37,64 +41,15 @@ const immersiveArtworkVideo = document.getElementById('immersive-artwork-video')
 const immersiveSongTitle = document.getElementById('immersive-song-title');
 const immersiveArtistName = document.getElementById('immersive-artist-name');
 const immersiveLyricsContent = document.getElementById('immersive-lyrics-content');
-
-// --- Global Audio Player Engine Elements ---
-const audioPlayer = document.getElementById('audio-player');
 const immersivePlayBtn = document.getElementById('immersive-play-btn');
 const immersivePlayIcon = document.getElementById('immersive-play-icon');
 
 let searchTimeout = null;
-let currentActiveArtworkUrl = ''; // Tracks the active song's static artwork URL
-let currentPlayingIndex = null;
-let currentPreviewUrl = null;
+let currentActiveArtworkUrl = ''; 
+let currentActiveTrackData = null; // Stores current track info for sync
 
 if (lyricsSection) {
     lyricsSection.classList.add('hidden');
-}
-
-// --- Audio Playback Event Listeners ---
-if (audioPlayer) {
-    audioPlayer.addEventListener('play', () => {
-        if (immersivePlayIcon) immersivePlayIcon.src = 'assets/playing.png';
-    });
-
-    audioPlayer.addEventListener('pause', () => {
-        if (immersivePlayIcon) immersivePlayIcon.src = 'assets/pause.png';
-        if (currentPlayingIndex !== null) {
-            const rowIcon = document.getElementById(`row-play-icon-${currentPlayingIndex}`);
-            if (rowIcon) rowIcon.src = 'assets/pause.png';
-        }
-    });
-
-    audioPlayer.addEventListener('ended', () => {
-        if (immersivePlayIcon) immersivePlayIcon.src = 'assets/pause.png';
-        if (currentPlayingIndex !== null) {
-            const rowIcon = document.getElementById(`row-play-icon-${currentPlayingIndex}`);
-            if (rowIcon) rowIcon.src = 'assets/pause.png';
-        }
-    });
-}
-
-// Immersive View Play Button Toggle Handler
-if (immersivePlayBtn) {
-    immersivePlayBtn.addEventListener('click', () => {
-        if (!audioPlayer || !audioPlayer.src) return;
-        if (audioPlayer.paused) {
-            audioPlayer.play();
-            if (immersivePlayIcon) immersivePlayIcon.src = 'assets/playing.png';
-            if (currentPlayingIndex !== null) {
-                const rowIcon = document.getElementById(`row-play-icon-${currentPlayingIndex}`);
-                if (rowIcon) rowIcon.src = 'assets/playing.png';
-            }
-        } else {
-            audioPlayer.pause();
-            if (immersivePlayIcon) immersivePlayIcon.src = 'assets/pause.png';
-            if (currentPlayingIndex !== null) {
-                const rowIcon = document.getElementById(`row-play-icon-${currentPlayingIndex}`);
-                if (rowIcon) rowIcon.src = 'assets/pause.png';
-            }
-        }
-    });
 }
 
 // --- Dynamic Artwork Motion Toggle Logic with Persistence ---
@@ -139,86 +94,10 @@ if (animatedCoverToggle) {
             localStorage.setItem('lyricspot_animated_cover', 'disabled');
         }
         
-        if (immersiveView && !immersiveView.classList.contains('hidden')) {
-            openImmersiveFullScreen();
+        if (immersiveView && !immersiveView.classList.contains('hidden') && currentActiveTrackData) {
+            updateImmersiveCoverMedia(currentActiveTrackData.trackName, currentActiveTrackData.artistName, currentActiveArtworkUrl);
         }
     });
-}
-
-// --- Dynamic Apple Music Animated Artwork Video Fetcher ---
-async function updateImmersiveCoverMedia(title, artist, defaultArtworkUrl) {
-    const isAnimatedEnabled = localStorage.getItem('lyricspot_animated_cover') === 'enabled';
-    
-    if (immersiveArtwork) immersiveArtwork.src = defaultArtworkUrl;
-    if (immersiveView) immersiveView.style.setProperty('--immersive-bg-image', `url('${defaultArtworkUrl}')`);
-
-    if (!isAnimatedEnabled) {
-        if (immersiveArtworkVideo) {
-            immersiveArtworkVideo.pause();
-            immersiveArtworkVideo.src = '';
-            immersiveArtworkVideo.classList.add('hidden');
-        }
-        if (immersiveArtwork) immersiveArtwork.classList.remove('hidden');
-        return;
-    }
-
-    if (immersiveArtworkVideo) {
-        try {
-            const query = encodeURIComponent(`${title} ${artist}`);
-            const response = await fetch(`https://itunes.apple.com/search?term=${query}&entity=musicTrack&limit=1`);
-            const data = await response.json();
-
-            if (data.results && data.results.length > 0) {
-                const trackData = data.results[0];
-                
-                if (trackData.artworkUrl100 && immersiveArtwork) {
-                    const highResArtwork = trackData.artworkUrl100.replace('100x100bb', '1400x1400bb');
-                    immersiveArtwork.src = highResArtwork;
-                    immersiveView.style.setProperty('--immersive-bg-image', `url('${highResArtwork}')`);
-                }
-
-                if (trackData.previewUrl) {
-                    immersiveArtworkVideo.src = trackData.previewUrl;
-                    immersiveArtworkVideo.load();
-                    immersiveArtworkVideo.loop = true;
-                    immersiveArtworkVideo.muted = true;
-                    immersiveArtworkVideo.playsInline = true;
-                    
-                    try {
-                        await immersiveArtworkVideo.play();
-                        immersiveArtworkVideo.classList.remove('hidden');
-                        immersiveArtwork.classList.add('hidden');
-                        return;
-                    } catch (playbackErr) {
-                        console.log("Browser policy restricted video autoplay:", playbackErr);
-                    }
-                }
-            }
-        } catch (error) {
-            console.log("Apple Music network fetch error:", error);
-        }
-
-        const fallbackMotionLoops = [
-            'https://assets.mixkit.co/videos/preview/mixkit-clouds-and-blue-sky-2408-large.mp4',
-            'https://assets.mixkit.co/videos/preview/mixkit-abstract-rotating-vortex-background-41444-large.mp4'
-        ];
-        const loopIndex = (title ? title.length : 0) % fallbackMotionLoops.length;
-        
-        immersiveArtworkVideo.src = fallbackMotionLoops[loopIndex];
-        immersiveArtworkVideo.load();
-        immersiveArtworkVideo.loop = true;
-        immersiveArtworkVideo.muted = true;
-        immersiveArtworkVideo.playsInline = true;
-        
-        try {
-            await immersiveArtworkVideo.play();
-            immersiveArtworkVideo.classList.remove('hidden');
-            immersiveArtwork.classList.add('hidden');
-        } catch (e) {
-            immersiveArtworkVideo.classList.add('hidden');
-            immersiveArtwork.classList.remove('hidden');
-        }
-    }
 }
 
 // Theme Elements
@@ -226,30 +105,24 @@ const themeButtons = document.querySelectorAll('.theme-btn');
 const bodyElement = document.body;
 
 // --- Navigation & Fluid Animation Handler ---
-if (tabHome) {
-    tabHome.addEventListener('click', () => {
-        if (floatingTabBar.classList.contains('search-expanded')) {
-            collapseSearchCapsule();
-        }
-        switchView('home');
-    });
-}
+tabHome.addEventListener('click', () => {
+    if (floatingTabBar.classList.contains('search-expanded')) {
+        collapseSearchCapsule();
+    }
+    switchView('home');
+});
 
-if (tabSettings) {
-    tabSettings.addEventListener('click', () => {
-        if (floatingTabBar.classList.contains('search-expanded')) {
-            collapseSearchCapsule();
-        }
-        switchView('settings');
-    });
-}
+tabSettings.addEventListener('click', () => {
+    if (floatingTabBar.classList.contains('search-expanded')) {
+        collapseSearchCapsule();
+    }
+    switchView('settings');
+});
 
-if (searchTriggerBtn) {
-    searchTriggerBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        expandSearchCapsule();
-    });
-}
+searchTriggerBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    expandSearchCapsule();
+});
 
 function expandSearchCapsule() {
     floatingTabBar.classList.add('search-expanded');
@@ -436,6 +309,70 @@ async function getLyricsData(artist, title, durationMs = 0) {
     return null;
 }
 
+// --- Unified Audio Playback Controller ---
+function toggleTrackPlayback(track, playBtnImgElement) {
+    const previewUrl = track.previewUrl;
+    if (!previewUrl) {
+        alert("Exact audio preview stream is unavailable for this track.");
+        return;
+    }
+
+    if (currentPlayingTrackId === track.trackId && activeAudioElement) {
+        if (activeAudioElement.paused) {
+            activeAudioElement.play();
+            playBtnImgElement.src = "assets/playing.png";
+            updateImmersivePlayIconState(true);
+        } else {
+            activeAudioElement.pause();
+            playBtnImgElement.src = "assets/pause.png";
+            updateImmersivePlayIconState(false);
+        }
+    } else {
+        // Stop any currently playing track
+        if (activeAudioElement) {
+            activeAudioElement.pause();
+            const previousBtn = document.querySelector(`.song-play-btn[data-track-id="${currentPlayingTrackId}"] img`);
+            if (previousBtn) previousBtn.src = "assets/pause.png";
+        }
+
+        currentPlayingTrackId = track.trackId;
+        activeAudioElement = new Audio(previewUrl);
+        
+        activeAudioElement.play().then(() => {
+            playBtnImgElement.src = "assets/playing.png";
+            updateImmersivePlayIconState(true);
+        }).catch(err => {
+            console.error("Playback restriction:", err);
+            playBtnImgElement.src = "assets/pause.png";
+            updateImmersivePlayIconState(false);
+        });
+
+        activeAudioElement.addEventListener('ended', () => {
+            playBtnImgElement.src = "assets/pause.png";
+            updateImmersivePlayIconState(false);
+            currentPlayingTrackId = null;
+        });
+    }
+}
+
+function updateImmersivePlayIconState(isPlaying) {
+    if (!immersivePlayIcon) return;
+    immersivePlayIcon.src = isPlaying ? "assets/playing.png" : "assets/pause.png";
+}
+
+if (immersivePlayBtn) {
+    immersivePlayBtn.addEventListener('click', () => {
+        if (!currentActiveTrackData || !currentActiveTrackData.previewUrl) return;
+        const matchingRowBtnImg = document.querySelector(`.song-play-btn[data-track-id="${currentActiveTrackData.trackId}"] img`);
+        if (matchingRowBtnImg) {
+            toggleTrackPlayback(currentActiveTrackData, matchingRowBtnImg);
+        } else {
+            // Fallback if triggered without list context reference
+            toggleTrackPlayback(currentActiveTrackData, immersivePlayIcon);
+        }
+    });
+}
+
 function renderSongList(tracks) {
     resultsContent.innerHTML = '';
     tracks.forEach((track, index) => {
@@ -447,43 +384,21 @@ function renderSongList(tracks) {
         item.innerHTML = `
             <span class="availability-dot" id="dot-${index}" title="Checking..."></span>
             <img src="${artworkUrl}" class="song-thumb" alt="Art">
-            <div class="song-meta" style="flex-grow: 1;">
+            <div class="song-meta" data-action="lyrics">
                 <h4>${escapeHTML(track.trackName)}</h4>
                 <p>${escapeHTML(track.artistName)}</p>
             </div>
-            <button class="row-play-btn" id="row-play-btn-${index}" title="Play preview">
-                <img src="assets/pause.png" alt="Play" id="row-play-icon-${index}" class="control-icon">
+            <button class="song-play-btn liquid-row-play-btn" data-track-id="${track.trackId}" title="Play / Pause">
+                <img src="assets/pause.png" alt="Play State">
             </button>
         `;
 
-        const rowPlayBtn = item.querySelector(`#row-play-btn-${index}`);
-        rowPlayBtn.addEventListener('click', (e) => {
+        const playBtnComponent = item.querySelector('.song-play-btn');
+        const playBtnImg = playBtnComponent.querySelector('img');
+
+        playBtnComponent.addEventListener('click', (e) => {
             e.stopPropagation();
-            
-            const rowIcon = document.getElementById(`row-play-icon-${index}`);
-            
-            if (currentPlayingIndex === index && audioPlayer && !audioPlayer.paused) {
-                audioPlayer.pause();
-                if (rowIcon) rowIcon.src = 'assets/pause.png';
-            } else {
-                if (currentPlayingIndex !== null && currentPlayingIndex !== index) {
-                    const prevIcon = document.getElementById(`row-play-icon-${currentPlayingIndex}`);
-                    if (prevIcon) prevIcon.src = 'assets/pause.png';
-                }
-
-                                currentPlayingIndex = index;
-                currentPreviewUrl = track.previewUrl;
-                
-                if (currentPreviewUrl && audioPlayer) {
-                    audioPlayer.src = currentPreviewUrl;
-                    audioPlayer.currentTime = 0; // Force playback from the beginning
-                    audioPlayer.play();
-                    if (rowIcon) rowIcon.src = 'assets/playing.png';
-                } else {
-                    alert("Audio preview unavailable for this track.");
-                }
-
-            }
+            toggleTrackPlayback(track, playBtnImg);
         });
 
         getLyricsData(track.artistName, track.trackName, track.trackTimeMillis).then(lyrics => {
@@ -501,7 +416,7 @@ function renderSongList(tracks) {
 
         item.addEventListener('click', () => {
             currentActiveArtworkUrl = artworkUrl;
-            currentPreviewUrl = track.previewUrl;
+            currentActiveTrackData = track;
 
             resultsSection.style.transition = 'transform 0.3s ease, opacity 0.25s ease';
             resultsSection.style.transform = 'translateX(-40px)';
@@ -519,25 +434,29 @@ function renderSongList(tracks) {
     });
 }
 
-// --- Open Immersive Full-Screen View ---
+// Attach listener to close full screen when back chevron is tapped
 if (immersiveBackBtn) {
     immersiveBackBtn.addEventListener('click', () => {
         closeImmersiveFullScreen();
     });
 }
 
+// --- Open Immersive Full-Screen View ---
 function openImmersiveFullScreen() {
     if (!immersiveView) return;
 
     const songTitleText = lyricsTitle.textContent;
     const artistNameText = lyricsArtistTag.textContent;
 
-    if (immersiveSongTitle) immersiveSongTitle.textContent = songTitleText;
-    if (immersiveArtistName) immersiveArtistName.textContent = artistNameText;
-    if (immersiveLyricsContent) immersiveLyricsContent.innerHTML = lyricsContent.innerHTML;
+    immersiveSongTitle.textContent = songTitleText;
+    immersiveArtistName.textContent = artistNameText;
+    immersiveLyricsContent.innerHTML = lyricsContent.innerHTML;
 
-    if (immersivePlayIcon && audioPlayer) {
-        immersivePlayIcon.src = audioPlayer.paused ? 'assets/pause.png' : 'assets/playing.png';
+    // Sync play button icon state in immersive view based on active audio engine
+    if (activeAudioElement && !activeAudioElement.paused && currentActiveTrackData) {
+        updateImmersivePlayIconState(true);
+    } else {
+        updateImmersivePlayIconState(false);
     }
 
     const isAnimatedEnabled = localStorage.getItem('lyricspot_animated_cover') === 'enabled';
@@ -569,6 +488,55 @@ function openImmersiveFullScreen() {
     document.body.style.overflow = 'hidden';
 }
 
+// --- Dynamic Apple Music Animated Artwork Video Fetcher ---
+async function updateImmersiveCoverMedia(title, artist, defaultArtworkUrl) {
+    if (!immersiveArtworkVideo || !immersiveArtwork) return;
+
+    immersiveArtwork.src = defaultArtworkUrl;
+    if (immersiveView) immersiveView.style.setProperty('--immersive-bg-image', `url('${defaultArtworkUrl}')`);
+
+    try {
+        const query = encodeURIComponent(`${title} ${artist}`);
+        const response = await fetch(`https://itunes.apple.com/search?term=${query}&entity=musicTrack&limit=1`);
+        const data = await response.json();
+
+        if (data.results && data.results.length > 0) {
+            const trackData = data.results[0];
+            
+            if (trackData.previewUrl) {
+                immersiveArtworkVideo.src = trackData.previewUrl;
+                immersiveArtworkVideo.load();
+                immersiveArtworkVideo.loop = true;
+                immersiveArtworkVideo.muted = true;
+                immersiveArtworkVideo.playsInline = true;
+                
+                await immersiveArtworkVideo.play();
+                
+                immersiveArtworkVideo.classList.remove('hidden');
+                immersiveArtwork.classList.add('hidden');
+                return;
+            }
+        }
+    } catch (error) {
+        console.log("Animated cover fetch warning:", error);
+    }
+
+    immersiveArtworkVideo.src = 'https://assets.mixkit.co/videos/preview/mixkit-clouds-and-blue-sky-2408-large.mp4';
+    immersiveArtworkVideo.load();
+    immersiveArtworkVideo.loop = true;
+    immersiveArtworkVideo.muted = true;
+    immersiveArtworkVideo.playsInline = true;
+    
+    try {
+        await immersiveArtworkVideo.play();
+        immersiveArtworkVideo.classList.remove('hidden');
+        immersiveArtwork.classList.add('hidden');
+    } catch (e) {
+        immersiveArtworkVideo.classList.add('hidden');
+        immersiveArtwork.classList.remove('hidden');
+    }
+}
+
 function closeImmersiveFullScreen() {
     if (!immersiveView) return;
     immersiveView.classList.add('hidden');
@@ -580,7 +548,6 @@ function closeImmersiveFullScreen() {
 }
 
 async function fetchAndDisplayLyrics(artist, title, durationMs) {
-    if (!lyricsSection) return;
     lyricsSection.classList.remove('hidden');
     lyricsSection.style.transform = 'translateX(40px)';
     lyricsSection.style.opacity = '0';
@@ -592,22 +559,21 @@ async function fetchAndDisplayLyrics(artist, title, durationMs) {
     });
 
     lyricsSection.classList.remove('fullscreen-mode');
-    if (fullscreenLyricsBtn) fullscreenLyricsBtn.textContent = "See full lyrics...";
-    if (lyricsTitle) lyricsTitle.textContent = title;
-    if (lyricsArtistTag) lyricsArtistTag.textContent = artist;
-    if (lyricsContent) lyricsContent.innerHTML = `<p class="placeholder-text">Fetching lyrics for "${title}"...</p>`;
+    fullscreenLyricsBtn.textContent = "See full lyrics...";
+    lyricsTitle.textContent = title;
+    lyricsArtistTag.textContent = artist;
+    lyricsContent.innerHTML = `<p class="placeholder-text">Fetching lyrics for "${title}"...</p>`;
 
     const lyrics = await getLyricsData(artist, title, durationMs);
 
-    if (lyrics && lyricsContent) {
+    if (lyrics) {
         lyricsContent.textContent = lyrics;
-    } else if (lyricsContent) {
+    } else {
         lyricsContent.innerHTML = `<p class="placeholder-text">Lyrics unavailable for <b>${title}</b> across public catalogs.</p>`;
     }
 }
 
 function escapeHTML(str) {
-    if (!str) return '';
     return str.replace(/[&<>'"]/g, 
         tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
