@@ -149,11 +149,20 @@
         </div>
     </div>
     <div class="immersive-hero-gradient"></div>
-    <div class="immersive-title-box">
-        <h1 id="immersive-song-title">Song Title</h1>
-        <p id="immersive-artist-name">Artist Name</p>
+    <!-- Inside #immersive-fullscreen-view -> .immersive-hero -->
+<div class="immersive-title-box">
+    <div class="immersive-title-row">
+        <div>
+            <h1 id="immersive-song-title">Song Title</h1>
+            <p id="immersive-artist-name">Artist Name</p>
+        </div>
+        <!-- Liquid Container Play Button (Red Circled Area) -->
+        <button id="immersive-play-btn" class="liquid-play-pill" title="Play / Pause">
+            <img src="assets/pause.png" alt="Play/Pause" id="immersive-play-icon" class="control-icon">
+        </button>
     </div>
 </div>
+
 
 
 
@@ -200,5 +209,9 @@
     </nav>
 
     <script src="script.js"></script>
+
+    <!-- Global Audio Player Engine -->
+<audio id="audio-player" preload="none"></audio>
+
 </body>
 </html>
