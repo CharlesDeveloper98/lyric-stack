@@ -93,16 +93,18 @@ if (animatedCoverToggle) {
     });
 }
 
+
+
 // --- Dynamic Apple Music Animated Artwork Video Fetcher ---
 async function updateImmersiveCoverMedia(title, artist, defaultArtworkUrl) {
     const isAnimatedEnabled = localStorage.getItem('lyricspot_animated_cover') === 'enabled';
     
-    // 1. Set immediate fallback to static artwork and background
+    // 1. Set immediate fallback to static artwork
     if (immersiveArtwork) immersiveArtwork.src = defaultArtworkUrl;
     if (immersiveView) immersiveView.style.setProperty('--immersive-bg-image', `url('${defaultArtworkUrl}')`);
 
     if (!isAnimatedEnabled) {
-        // Toggle is OFF: Ensure video is hidden and paused
+        // Toggle is OFF: Pause and hide video layer
         if (immersiveArtworkVideo) {
             immersiveArtworkVideo.pause();
             immersiveArtworkVideo.src = '';
@@ -112,7 +114,7 @@ async function updateImmersiveCoverMedia(title, artist, defaultArtworkUrl) {
         return;
     }
 
-    // Toggle is ON: Fetch real online animated media assets matching the selected song
+    // Toggle is ON: Fetch real online animated media stream matching the song
     if (immersiveArtworkVideo) {
         try {
             const query = encodeURIComponent(`${title} ${artist}`);
@@ -122,14 +124,14 @@ async function updateImmersiveCoverMedia(title, artist, defaultArtworkUrl) {
             if (data.results && data.results.length > 0) {
                 const trackData = data.results[0];
                 
-                // Upgrade static image backdrop to high-res
+                // Set high-res static artwork background backdrop
                 if (trackData.artworkUrl100 && immersiveArtwork) {
                     const highResArtwork = trackData.artworkUrl100.replace('100x100bb', '1400x1400bb');
                     immersiveArtwork.src = highResArtwork;
                     immersiveView.style.setProperty('--immersive-bg-image', `url('${highResArtwork}')`);
                 }
 
-                // Map preview video URL if provided by catalog
+                // Bind official Apple catalog song preview video stream if present
                 if (trackData.previewUrl) {
                     immersiveArtworkVideo.src = trackData.previewUrl;
                     immersiveArtworkVideo.load();
@@ -139,22 +141,22 @@ async function updateImmersiveCoverMedia(title, artist, defaultArtworkUrl) {
                     
                     try {
                         await immersiveArtworkVideo.play();
+                        // Successfully playing motion artwork video over song picture
                         immersiveArtworkVideo.classList.remove('hidden');
                         if (immersiveArtwork) immersiveArtwork.classList.add('hidden');
                         return;
-                    } catch (playErr) {
-                        console.log("Autoplay blocked, falling back to static art:", playErr);
+                    } catch (playbackErr) {
+                        console.log("Browser autoplay restriction caught:", playbackErr);
                     }
                 }
             }
         } catch (error) {
-            console.log("Online animated video fetch error:", error);
+            console.log("Catalog fetch error for animated cover:", error);
         }
 
-        // Cinematic Fallback Motion Loops if song asset is missing
+        // Seamless fallback motion loop if specific track video stream is unavailable
         const fallbackMotionLoops = [
             'https://assets.mixkit.co/videos/preview/mixkit-clouds-and-blue-sky-2408-large.mp4',
-            'https://assets.mixkit.co/videos/preview/mixkit-silhouette-of-a-girl-jumping-against-the-sky-41551-large.mp4',
             'https://assets.mixkit.co/videos/preview/mixkit-abstract-rotating-vortex-background-41444-large.mp4'
         ];
         const loopIndex = (title ? title.length : 0) % fallbackMotionLoops.length;
@@ -175,6 +177,8 @@ async function updateImmersiveCoverMedia(title, artist, defaultArtworkUrl) {
         }
     }
 }
+
+
 
 
 // Theme Elements
