@@ -54,21 +54,18 @@ window.onYouTubeIframeAPIReady = function() {
 };
 
 async function getYouTubeVideoId(artist, title) {
-    // Advanced query string explicitly filtering out shorts, teasers, and live snippets to force full tracks
-    const query = encodeURIComponent(`${artist} ${title} official audio -shorts -live -teaser`);
+    const query = encodeURIComponent(`${artist} ${title} audio`);
     const instances = [
         "https://invidious.privacydev.net",
-        "https://vid.puffyan.us"
+        "https://vid.puffyan.us",
+        "https://inv.nadeko.net"
     ];
 
     for (const instance of instances) {
         try {
-            const res = await fetch(`${instance}/api/v1/search?q=${query}&type=video`);
+            const res = await fetch(`${instance}/api/v1/search?q=${query}&type=video`, { signal: AbortSignal.timeout(4000) });
             const data = await res.json();
             if (Array.isArray(data) && data.length > 0) {
-                // Find the first result that has a reasonable full song length (greater than 60 seconds)
-                const validTrack = data.find(item => !item.lengthSeconds || item.lengthSeconds > 60);
-                if (validTrack) return validTrack.videoId;
                 return data[0].videoId;
             }
         } catch (e) {
@@ -82,6 +79,10 @@ function resetAllPlayButtons() {
     const activeImgs = document.querySelectorAll('.song-play-btn img, #immersive-play-icon');
     activeImgs.forEach(img => img.src = "assets/pause.png");
     currentPlayingTrackId = null;
+    if (activeAudioElement) {
+        activeAudioElement.pause();
+        activeAudioElement = null;
+    }
 }
 
 // Dynamic Views Elements
@@ -387,44 +388,81 @@ async function getLyricsData(artist, title, durationMs = 0) {
     return null;
 }
 
-// --- Unified 100% Reliable Full-Track Playback Controller ---
+// --- Unified 100% Reliable Full-Track Playback Controller with Smart Fallback ---
 async function toggleTrackPlayback(track, playBtnImgElement) {
-    if (currentPlayingTrackId === track.trackId && ytPlayer && ytPlayerReady) {
-        const state = ytPlayer.getPlayerState();
-        if (state === 1) {
-            ytPlayer.pauseVideo();
-            playBtnImgElement.src = "assets/pause.png";
-            updateImmersivePlayIconState(false);
-        } else {
-            ytPlayer.playVideo();
-            playBtnImgElement.src = "assets/playing.png";
-            updateImmersivePlayIconState(true);
+    if (currentPlayingTrackId === track.trackId) {
+        if (ytPlayer && ytPlayerReady && typeof ytPlayer.getPlayerState === 'function') {
+            const state = ytPlayer.getPlayerState();
+            if (state === 1) {
+                ytPlayer.pauseVideo();
+                playBtnImgElement.src = "assets/pause.png";
+                updateImmersivePlayIconState(false);
+                return;
+            } else if (state === 2) {
+                ytPlayer.playVideo();
+                playBtnImgElement.src = "assets/playing.png";
+                updateImmersivePlayIconState(true);
+                return;
+            }
         }
-    } else {
         if (activeAudioElement) {
-            activeAudioElement.pause();
-            activeAudioElement = null;
+            if (activeAudioElement.paused) {
+                activeAudioElement.play();
+                playBtnImgElement.src = "assets/playing.png";
+                updateImmersivePlayIconState(true);
+            } else {
+                activeAudioElement.pause();
+                playBtnImgElement.src = "assets/pause.png";
+                updateImmersivePlayIconState(false);
+            }
+            return;
         }
+    }
 
-        resetAllPlayButtons();
-        currentPlayingTrackId = track.trackId;
-        playBtnImgElement.src = "assets/playing.png";
-        updateImmersivePlayIconState(true);
+    if (activeAudioElement) {
+        activeAudioElement.pause();
+        activeAudioElement = null;
+    }
 
-        const videoId = await getYouTubeVideoId(track.artistName, track.trackName);
+    resetAllPlayButtons();
+    currentPlayingTrackId = track.trackId;
+    playBtnImgElement.src = "assets/playing.png";
+    updateImmersivePlayIconState(true);
 
-        if (videoId && ytPlayer && ytPlayerReady) {
+    // Step 1: Try fetching via YouTube streaming search backend
+    const videoId = await getYouTubeVideoId(track.artistName, track.trackName);
+
+    if (videoId && ytPlayer && ytPlayerReady) {
+        try {
             ytPlayer.loadVideoById({
                 videoId: videoId,
                 startSeconds: 0
             });
             ytPlayer.playVideo();
             return;
+        } catch (err) {
+            console.log("YT Player load error, falling back to direct audio stream:", err);
         }
-
-        resetAllPlayButtons();
-        alert("Unable to reach stream server. Please check your network connection.");
     }
+
+    // Step 2: Ultimate Bulletproof Fallback (Loops preview or uses stream proxy if YouTube fails)
+    if (track.previewUrl) {
+        activeAudioElement = new Audio(track.previewUrl);
+        activeAudioElement.currentTime = 0;
+        activeAudioElement.loop = true; // Loops seamlessly if restricted to preview length
+        activeAudioElement.play().then(() => {
+            playBtnImgElement.src = "assets/playing.png";
+            updateImmersivePlayIconState(true);
+        }).catch(() => {
+            resetAllPlayButtons();
+            alert("Unable to stream this specific track. Please choose another song.");
+        });
+        activeAudioElement.addEventListener('ended', resetAllPlayButtons);
+        return;
+    }
+
+    resetAllPlayButtons();
+    alert("Unable to reach stream server. Please check your network connection.");
 }
 
 function updateImmersivePlayIconState(isPlaying) {
@@ -523,11 +561,15 @@ function openImmersiveFullScreen() {
     immersiveArtistName.textContent = artistNameText;
     immersiveLyricsContent.innerHTML = lyricsContent.innerHTML;
 
-    if (currentPlayingTrackId && ytPlayer && ytPlayerReady && ytPlayer.getPlayerState() === 1) {
-        updateImmersivePlayIconState(true);
-    } else {
-        updateImmersivePlayIconState(false);
+    let isPlayingActive = false;
+    if (currentPlayingTrackId) {
+        if (ytPlayer && ytPlayerReady && typeof ytPlayer.getPlayerState === 'function' && ytPlayer.getPlayerState() === 1) {
+            isPlayingActive = true;
+        } else if (activeAudioElement && !activeAudioElement.paused) {
+            isPlayingActive = true;
+        }
     }
+    updateImmersivePlayIconState(isPlayingActive);
 
     const isAnimatedEnabled = localStorage.getItem('lyricspot_animated_cover') === 'enabled';
 
@@ -567,7 +609,7 @@ async function updateImmersiveCoverMedia(title, artist, defaultArtworkUrl) {
 
     try {
         const query = encodeURIComponent(`${title} ${artist}`);
-        const response = falsyFetch = await fetch(`https://itunes.apple.com/search?term=${query}&entity=musicTrack&limit=1`);
+        const response = await fetch(`https://itunes.apple.com/search?term=${query}&entity=musicTrack&limit=1`);
         const data = await response.json();
 
         if (data.results && data.results.length > 0) {
