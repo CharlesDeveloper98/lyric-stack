@@ -73,7 +73,6 @@ async function getFullSongAudioStreamUrl(artist, title) {
                     const streamData = await streamRes.json();
                     
                     if (streamData && streamData.audioStreams && streamData.audioStreams.length > 0) {
-                        // Sort to get highest quality audio stream URL
                         const audioStreams = streamData.audioStreams.filter(s => s.url);
                         audioStreams.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
                         if (audioStreams.length > 0) {
@@ -429,7 +428,6 @@ async function toggleTrackPlayback(track, playBtnImgElement) {
     playBtnImgElement.src = "assets/playing.png";
     updateImmersivePlayIconState(true);
 
-    // Fetch direct streaming url for full song playback
     const fullAudioUrl = await getFullSongAudioStreamUrl(track.artistName, track.trackName);
 
     if (fullAudioUrl) {
@@ -451,7 +449,6 @@ async function toggleTrackPlayback(track, playBtnImgElement) {
         return;
     }
 
-    // Fallback if full stream resolver fails
     if (track.previewUrl) {
         activeAudioElement = new Audio(track.previewUrl);
         activeAudioElement.currentTime = 0;
@@ -550,7 +547,6 @@ function renderSongList(tracks) {
     });
 }
 
-// Attach listener to close full screen when back chevron is tapped
 if (immersiveBackBtn) {
     immersiveBackBtn.addEventListener('click', () => {
         closeImmersiveFullScreen();
@@ -603,7 +599,7 @@ function openImmersiveFullScreen() {
     document.body.style.overflow = 'hidden';
 }
 
-// --- Dynamic Apple Music Animated Artwork Video Fetcher ---
+// --- Fixed Apple Music Motion/Animated Video Cover Fetcher ---
 async function updateImmersiveCoverMedia(title, artist, defaultArtworkUrl) {
     if (!immersiveArtworkVideo || !immersiveArtwork) return;
 
@@ -611,32 +607,47 @@ async function updateImmersiveCoverMedia(title, artist, defaultArtworkUrl) {
     if (immersiveView) immersiveView.style.setProperty('--immersive-bg-image', `url('${defaultArtworkUrl}')`);
 
     try {
-        const query = encodeURIComponent(`${title} ${artist}`);
-        const response = await fetch(`https://itunes.apple.com/search?term=${query}&entity=musicTrack&limit=1`);
+        const cleanName = cleanTitleForQuery(title);
+        const query = encodeURIComponent(`${cleanName} ${artist}`);
+        
+        // Target music video query endpoint to fetch live motion artwork streams online
+        const response = await fetch(`https://itunes.apple.com/search?term=${query}&entity=musicVideo&limit=1`);
         const data = await response.json();
 
-        if (data.results && data.results.length > 0) {
-            const trackData = data.results[0];
-            
-            if (trackData.previewUrl) {
-                immersiveArtworkVideo.src = trackData.previewUrl;
-                immersiveArtworkVideo.load();
-                immersiveArtworkVideo.loop = true;
-                immersiveArtworkVideo.muted = true;
-                immersiveArtworkVideo.playsInline = true;
-                
-                await immersiveArtworkVideo.play();
-                
-                immersiveArtworkVideo.classList.remove('hidden');
-                immersiveArtwork.classList.add('hidden');
-                return;
+        let videoStreamUrl = null;
+        if (data.results && data.results.length > 0 && data.results[0].previewUrl) {
+            videoStreamUrl = data.results[0].previewUrl;
+        } else {
+            // Fallback lookup search targeting general track media entities
+            const fallbackRes = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=3`);
+            const fallbackData = await fallbackRes.json();
+            if (fallbackData.results) {
+                const matchWithVideo = fallbackData.results.find(item => item.previewUrl);
+                if (matchWithVideo) {
+                    videoStreamUrl = matchWithVideo.previewUrl;
+                }
             }
         }
+
+        if (videoStreamUrl) {
+            immersiveArtworkVideo.src = videoStreamUrl;
+            immersiveArtworkVideo.load();
+            immersiveArtworkVideo.loop = true;
+            immersiveArtworkVideo.muted = true;
+            immersiveArtworkVideo.playsInline = true;
+            
+            await immersiveArtworkVideo.play();
+            
+            immersiveArtworkVideo.classList.remove('hidden');
+            immersiveArtwork.classList.add('hidden');
+            return;
+        }
     } catch (error) {
-        console.log("Animated cover fetch warning:", error);
+        console.log("Animated cover online fetch warning:", error);
     }
 
-    immersiveArtworkVideo.src = 'https://assets.mixkit.co/videos/preview/mixkit-clouds-and-blue-sky-2408-large.mp4';
+    // Fallback seamless motion loop if no specific music video asset is available online
+    immersiveArtworkVideo.src = 'https://assets.mixkit.co/videos/preview/mixkit-abstract-liquid-background-animation-31932-large.mp4';
     immersiveArtworkVideo.load();
     immersiveArtworkVideo.loop = true;
     immersiveArtworkVideo.muted = true;
