@@ -54,7 +54,7 @@ window.onYouTubeIframeAPIReady = function() {
 };
 
 async function getYouTubeVideoId(artist, title) {
-    const query = encodeURIComponent(`${artist} ${title} audio`);
+    const query = encodeURIComponent(`${artist} ${title} official audio`);
     try {
         const res = await fetch(`https://vid.puffyan.us/api/v1/search?q=${query}&type=video`);
         const data = await res.json();
@@ -376,7 +376,7 @@ async function getLyricsData(artist, title, durationMs = 0) {
     return null;
 }
 
-// --- Unified Full-Song Playback Controller (YouTube Iframe) ---
+// --- Unified Full-Song Playback Controller (YouTube Embedded Player) ---
 async function toggleTrackPlayback(track, playBtnImgElement) {
     if (currentPlayingTrackId === track.trackId && ytPlayer && ytPlayerReady) {
         const state = ytPlayer.getPlayerState();
@@ -391,7 +391,6 @@ async function toggleTrackPlayback(track, playBtnImgElement) {
             updateImmersivePlayIconState(true);
         }
     } else {
-        // Stop any current audio element preview if running
         if (activeAudioElement) {
             activeAudioElement.pause();
             activeAudioElement = null;
@@ -402,25 +401,15 @@ async function toggleTrackPlayback(track, playBtnImgElement) {
         playBtnImgElement.src = "assets/playing.png";
         updateImmersivePlayIconState(true);
 
-        // Fetch matching YouTube Video ID
         const videoId = await getYouTubeVideoId(track.artistName, track.trackName);
 
         if (!videoId || !ytPlayer || !ytPlayerReady) {
-            // Fallback to iTunes 30s preview if video search fails
-            if (track.previewUrl) {
-                if (activeAudioElement) activeAudioElement.pause();
-                activeAudioElement = new Audio(track.previewUrl);
-                activeAudioElement.currentTime = 0;
-                activeAudioElement.play();
-                activeAudioElement.addEventListener('ended', resetAllPlayButtons);
-                return;
-            }
-            alert("Unable to load full-length stream for this track.");
+            alert("Unable to fetch full stream for this song. Please check your internet connection.");
             resetAllPlayButtons();
             return;
         }
 
-        // Load and play the full track natively from YouTube
+        // Load the full track starting from 0 seconds natively
         ytPlayer.loadVideoById({
             videoId: videoId,
             startSeconds: 0
@@ -525,7 +514,6 @@ function openImmersiveFullScreen() {
     immersiveArtistName.textContent = artistNameText;
     immersiveLyricsContent.innerHTML = lyricsContent.innerHTML;
 
-    // Sync play button icon state in immersive view based on active player
     if (currentPlayingTrackId && ytPlayer && ytPlayerReady && ytPlayer.getPlayerState() === 1) {
         updateImmersivePlayIconState(true);
     } else {
