@@ -890,3 +890,35 @@ body {
     padding-bottom: 60px;
     text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
+
+
+
+/* Dynamic Motion & Breathing Effect for Static Pictures without Videos */
+@keyframes staticPictureDynamicMotion {
+    0% {
+        transform: scale(1.05) translate(0px, 0px);
+        filter: brightness(0.9);
+    }
+    25% {
+        transform: scale(1.1) translate(-10px, -8px);
+        filter: brightness(0.7);
+    }
+    50% {
+        transform: scale(1.08) translate(8px, -12px);
+        filter: brightness(1.0);
+    }
+    75% {
+        transform: scale(1.12) translate(10px, 6px);
+        filter: brightness(0.75);
+    }
+    100% {
+        transform: scale(1.05) translate(0px, 0px);
+        filter: brightness(0.9);
+    }
+}
+
+.static-picture-animated {
+    animation: staticPictureDynamicMotion 14s ease-in-out infinite;
+    object-fit: cover;
+}
+
