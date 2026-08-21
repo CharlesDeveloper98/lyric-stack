@@ -584,7 +584,7 @@ async function openImmersiveFullScreen() {
     document.body.style.overflow = 'hidden';
 }
 
-// --- Cover Media Resolver with Animated Moving/Dimming Static Fallback ---
+// --- Cover Media Resolver with Crystal Clear Moving Static Fallback ---
 async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
     if (!immersiveArtworkVideo || !immersiveArtwork || !immersiveView) return;
 
@@ -630,7 +630,7 @@ async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
         console.log("Online animated cover lookup exception:", e);
     }
 
-    // If no online video exists for this track, use its default picture with smooth floating motion and dimming
+    // If no online video exists, use crystal clear picture with smooth animated motion
     if (!resolvedVideoStreamUrl) {
         immersiveArtworkVideo.pause();
         immersiveArtworkVideo.removeAttribute('src');
