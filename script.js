@@ -86,12 +86,14 @@ if (animatedCoverToggle) {
         } else {
             localStorage.setItem('lyricspot_animated_cover', 'disabled');
         }
-        // Refresh current immersive cover view instantly if open
-        if (immersiveSongTitle && immersiveArtistName) {
-            updateImmersiveCoverMedia(immersiveSongTitle.textContent, immersiveArtistName.textContent, currentActiveArtworkUrl);
+        
+        // Refresh media view instantly if immersive screen is active
+        if (immersiveView && !immersiveView.classList.contains('hidden')) {
+            openImmersiveFullScreen();
         }
     });
 }
+
 
 
 
@@ -446,6 +448,7 @@ if (immersiveBackBtn) {
     });
 }
 
+// --- Open Immersive Full-Screen View ---
 function openImmersiveFullScreen() {
     if (!immersiveView) return;
 
@@ -456,9 +459,26 @@ function openImmersiveFullScreen() {
     immersiveArtistName.textContent = artistNameText;
     immersiveLyricsContent.innerHTML = lyricsContent.innerHTML;
 
-    // Automatically trigger animated video stream fetch when entering full screen
-    if (currentActiveArtworkUrl) {
+    // Check if Animated Artwork Cover toggle is enabled
+    const isAnimatedEnabled = localStorage.getItem('lyricspot_animated_cover') === 'enabled';
+
+    if (isAnimatedEnabled && currentActiveArtworkUrl) {
+        // Fetch and display the animated video cover right on the song picture area
         updateImmersiveCoverMedia(songTitleText, artistNameText, currentActiveArtworkUrl);
+    } else {
+        // Fallback to static picture if toggle is disabled
+        if (immersiveArtwork) {
+            immersiveArtwork.src = currentActiveArtworkUrl;
+            immersiveArtwork.classList.remove('hidden');
+        }
+        if (immersiveArtworkVideo) {
+            immersiveArtworkVideo.pause();
+            immersiveArtworkVideo.src = '';
+            immersiveArtworkVideo.classList.add('hidden');
+        }
+        if (immersiveView) {
+            immersiveView.style.setProperty('--immersive-bg-image', `url('${currentActiveArtworkUrl}')`);
+        }
     }
 
     if (localStorage.getItem('lyricspot_artwork_motion') === 'enabled') {
@@ -470,6 +490,61 @@ function openImmersiveFullScreen() {
     immersiveView.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 }
+
+// --- Dynamic Apple Music Animated Artwork Video Fetcher ---
+async function updateImmersiveCoverMedia(title, artist, defaultArtworkUrl) {
+    if (!immersiveArtworkVideo || !immersiveArtwork) return;
+
+    // Set immediate static fallback
+    immersiveArtwork.src = defaultArtworkUrl;
+    if (immersiveView) immersiveView.style.setProperty('--immersive-bg-image', `url('${defaultArtworkUrl}')`);
+
+    try {
+        const query = encodeURIComponent(`${title} ${artist}`);
+        const response = await fetch(`https://itunes.apple.com/search?term=${query}&entity=musicTrack&limit=1`);
+        const data = await response.json();
+
+        if (data.results && data.results.length > 0) {
+            const trackData = data.results[0];
+            
+            // Use track preview video URL as the animated cover
+            if (trackData.previewUrl) {
+                immersiveArtworkVideo.src = trackData.previewUrl;
+                immersiveArtworkVideo.load();
+                immersiveArtworkVideo.loop = true;
+                immersiveArtworkVideo.muted = true;
+                immersiveArtworkVideo.playsInline = true;
+                
+                await immersiveArtworkVideo.play();
+                
+                // Switch visibility: Hide static image, show motion video cover
+                immersiveArtworkVideo.classList.remove('hidden');
+                immersiveArtwork.classList.add('hidden');
+                return;
+            }
+        }
+    } catch (error) {
+        console.log("Animated cover fetch warning, using default video stream:", error);
+    }
+
+    // High-quality fallback motion loop if specific track preview isn't returned
+    immersiveArtworkVideo.src = 'https://assets.mixkit.co/videos/preview/mixkit-clouds-and-blue-sky-2408-large.mp4';
+    immersiveArtworkVideo.load();
+    immersiveArtworkVideo.loop = true;
+    immersiveArtworkVideo.muted = true;
+    immersiveArtworkVideo.playsInline = true;
+    
+    try {
+        await immersiveArtworkVideo.play();
+        immersiveArtworkVideo.classList.remove('hidden');
+        immersiveArtwork.classList.add('hidden');
+    } catch (e) {
+        immersiveArtworkVideo.classList.add('hidden');
+        immersiveArtwork.classList.remove('hidden');
+    }
+}
+
+
 
 function closeImmersiveFullScreen() {
     if (!immersiveView) return;
