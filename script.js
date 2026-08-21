@@ -132,22 +132,23 @@ async function updateImmersiveCoverMedia(title, artist, defaultArtworkUrl) {
                 // Map preview video URL if provided by catalog
                 if (trackData.previewUrl) {
                     immersiveArtworkVideo.src = trackData.previewUrl;
+                    immersiveArtworkVideo.load();
                     immersiveArtworkVideo.loop = true;
                     immersiveArtworkVideo.muted = true;
                     immersiveArtworkVideo.playsInline = true;
                     
-                    immersiveArtworkVideo.classList.remove('hidden');
-                    if (immersiveArtwork) immersiveArtwork.classList.add('hidden');
-                    
-                    await immersiveArtworkVideo.play().catch(() => {
-                        immersiveArtworkVideo.classList.add('hidden');
-                        if (immersiveArtwork) immersiveArtwork.classList.remove('hidden');
-                    });
-                    return;
+                    try {
+                        await immersiveArtworkVideo.play();
+                        immersiveArtworkVideo.classList.remove('hidden');
+                        if (immersiveArtwork) immersiveArtwork.classList.add('hidden');
+                        return;
+                    } catch (playErr) {
+                        console.log("Autoplay blocked, falling back to static art:", playErr);
+                    }
                 }
             }
         } catch (error) {
-            console.log("Online animated video fetch error, using cinematic loop fallback:", error);
+            console.log("Online animated video fetch error:", error);
         }
 
         // Cinematic Fallback Motion Loops if song asset is missing
@@ -159,15 +160,22 @@ async function updateImmersiveCoverMedia(title, artist, defaultArtworkUrl) {
         const loopIndex = (title ? title.length : 0) % fallbackMotionLoops.length;
         
         immersiveArtworkVideo.src = fallbackMotionLoops[loopIndex];
+        immersiveArtworkVideo.load();
         immersiveArtworkVideo.loop = true;
         immersiveArtworkVideo.muted = true;
         immersiveArtworkVideo.playsInline = true;
-        immersiveArtworkVideo.classList.remove('hidden');
-        if (immersiveArtwork) immersiveArtwork.classList.add('hidden');
         
-        immersiveArtworkVideo.play().catch(() => {});
+        try {
+            await immersiveArtworkVideo.play();
+            immersiveArtworkVideo.classList.remove('hidden');
+            if (immersiveArtwork) immersiveArtwork.classList.add('hidden');
+        } catch (e) {
+            immersiveArtworkVideo.classList.add('hidden');
+            if (immersiveArtwork) immersiveArtwork.classList.remove('hidden');
+        }
     }
 }
+
 
 // Theme Elements
 const themeButtons = document.querySelectorAll('.theme-btn');
