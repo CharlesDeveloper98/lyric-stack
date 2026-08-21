@@ -893,34 +893,30 @@ body {
 
 
 
-/* Crystal Clear Dynamic Motion Effect for Static Pictures */
+/* Ensure crystal clear view for static artwork fallback with smooth floating motion */
 @keyframes staticPictureDynamicMotion {
     0% {
-        transform: scale(1.05) translate(0px, 0px);
-        filter: brightness(1) contrast(1.05);
+        transform: scale(1.03) translate(0px, 0px);
     }
     25% {
-        transform: scale(1.12) translate(-12px, -10px);
-        filter: brightness(1.05) contrast(1.1);
+        transform: scale(1.08) translate(-8px, -6px);
     }
     50% {
-        transform: scale(1.08) translate(10px, -14px);
-        filter: brightness(1) contrast(1.05);
+        transform: scale(1.05) translate(6px, -10px);
     }
     75% {
-        transform: scale(1.12) translate(12px, 8px);
-        filter: brightness(1.05) contrast(1.1);
+        transform: scale(1.08) translate(8px, 6px);
     }
     100% {
-        transform: scale(1.05) translate(0px, 0px);
-        filter: brightness(1) contrast(1.05);
+        transform: scale(1.03) translate(0px, 0px);
     }
 }
 
 .static-picture-animated {
     animation: staticPictureDynamicMotion 14s ease-in-out infinite;
     object-fit: cover;
-    filter: brightness(1);
+    filter: none !important; /* Removes any unwanted blur or dark filter */
 }
+
 
 
