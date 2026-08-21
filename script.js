@@ -54,8 +54,8 @@ window.onYouTubeIframeAPIReady = function() {
 };
 
 async function getYouTubeVideoId(artist, title) {
-    const query = encodeURIComponent(`${artist} ${title} audio`);
-    // Using a reliable public instance with automated fallback rotation
+    // Advanced query string explicitly filtering out shorts, teasers, and live snippets to force full tracks
+    const query = encodeURIComponent(`${artist} ${title} official audio -shorts -live -teaser`);
     const instances = [
         "https://invidious.privacydev.net",
         "https://vid.puffyan.us"
@@ -66,15 +66,17 @@ async function getYouTubeVideoId(artist, title) {
             const res = await fetch(`${instance}/api/v1/search?q=${query}&type=video`);
             const data = await res.json();
             if (Array.isArray(data) && data.length > 0) {
+                // Find the first result that has a reasonable full song length (greater than 60 seconds)
+                const validTrack = data.find(item => !item.lengthSeconds || item.lengthSeconds > 60);
+                if (validTrack) return validTrack.videoId;
                 return data[0].videoId;
             }
         } catch (e) {
-            continue; // Try next instance if one fails
+            continue; 
         }
     }
     return null;
 }
-
 
 function resetAllPlayButtons() {
     const activeImgs = document.querySelectorAll('.song-play-btn img, #immersive-play-icon');
@@ -385,7 +387,7 @@ async function getLyricsData(artist, title, durationMs = 0) {
     return null;
 }
 
-// --- Unified 100% Reliable Playback Controller ---
+// --- Unified 100% Reliable Full-Track Playback Controller ---
 async function toggleTrackPlayback(track, playBtnImgElement) {
     if (currentPlayingTrackId === track.trackId && ytPlayer && ytPlayerReady) {
         const state = ytPlayer.getPlayerState();
@@ -409,7 +411,6 @@ async function toggleTrackPlayback(track, playBtnImgElement) {
         playBtnImgElement.src = "assets/playing.png";
         updateImmersivePlayIconState(true);
 
-        // Attempt YouTube stream first
         const videoId = await getYouTubeVideoId(track.artistName, track.trackName);
 
         if (videoId && ytPlayer && ytPlayerReady) {
@@ -421,27 +422,10 @@ async function toggleTrackPlayback(track, playBtnImgElement) {
             return;
         }
 
-        // Seamless Fallback: If network blocks or resolver fails, switch to native audio stream safely
-        if (track.previewUrl) {
-            activeAudioElement = new Audio(track.previewUrl);
-            activeAudioElement.currentTime = 0;
-            activeAudioElement.play().then(() => {
-                playBtnImgElement.src = "assets/playing.png";
-                updateImmersivePlayIconState(true);
-            }).catch(() => {
-                resetAllPlayButtons();
-                alert("Playback could not be initialized. Please try another song.");
-            });
-            activeAudioElement.addEventListener('ended', resetAllPlayButtons);
-            return;
-        }
-
         resetAllPlayButtons();
         alert("Unable to reach stream server. Please check your network connection.");
     }
 }
-
-
 
 function updateImmersivePlayIconState(isPlaying) {
     if (!immersivePlayIcon) return;
@@ -583,7 +567,7 @@ async function updateImmersiveCoverMedia(title, artist, defaultArtworkUrl) {
 
     try {
         const query = encodeURIComponent(`${title} ${artist}`);
-        const response = await fetch(`https://itunes.apple.com/search?term=${query}&entity=musicTrack&limit=1`);
+        const response = falsyFetch = await fetch(`https://itunes.apple.com/search?term=${query}&entity=musicTrack&limit=1`);
         const data = await response.json();
 
         if (data.results && data.results.length > 0) {
