@@ -591,12 +591,12 @@ async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
     const isAnimatedEnabled = localStorage.getItem('lyricspot_animated_cover') === 'enabled';
 
     // Clear stale styles upfront
-    immersiveView.style.setProperty('--immersive-bg-image', `url('${defaultArtworkUrl}')`);
+    immersiveView.style.removeProperty('--immersive-bg-image');
     immersiveArtwork.classList.remove('static-picture-animated');
 
     if (!isAnimatedEnabled) {
         immersiveArtwork.src = defaultArtworkUrl;
-        immersiveArtwork.classList.remove('hidden');
+        immersiveArtwork.classList.remove('hidden', 'static-picture-animated');
         immersiveArtworkVideo.pause();
         immersiveArtworkVideo.removeAttribute('src');
         immersiveArtworkVideo.load();
@@ -629,7 +629,7 @@ async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
         console.log("Online animated cover lookup exception:", e);
     }
 
-    // If no video exists, show the crystal-clear default picture with smooth floating motion
+    // If no video exists or toggle is active for static artwork, show crystal-clear default picture with floating motion + brightness/dimming
     if (!resolvedVideoStreamUrl) {
         immersiveArtworkVideo.pause();
         immersiveArtworkVideo.removeAttribute('src');
@@ -642,7 +642,7 @@ async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
         return;
     }
 
-    // Load and play resolved video stream
+    // Load and play resolved video stream if available
     try {
         immersiveArtworkVideo.src = resolvedVideoStreamUrl;
         immersiveArtworkVideo.load();
