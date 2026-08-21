@@ -388,7 +388,7 @@ async function getLyricsData(artist, title, durationMs = 0) {
     return null;
 }
 
-// --- Unified 100% Reliable Full-Track Playback Controller with Smart Fallback ---
+// --- Unified Playback Controller without preview looping ---
 async function toggleTrackPlayback(track, playBtnImgElement) {
     if (currentPlayingTrackId === track.trackId) {
         if (ytPlayer && ytPlayerReady && typeof ytPlayer.getPlayerState === 'function') {
@@ -445,11 +445,11 @@ async function toggleTrackPlayback(track, playBtnImgElement) {
         }
     }
 
-    // Step 2: Ultimate Bulletproof Fallback (Loops preview or uses stream proxy if YouTube fails)
+    // Step 2: Fallback to audio stream without looping so it stops naturally when finished
     if (track.previewUrl) {
         activeAudioElement = new Audio(track.previewUrl);
         activeAudioElement.currentTime = 0;
-        activeAudioElement.loop = true; // Loops seamlessly if restricted to preview length
+        activeAudioElement.loop = false; // Fixed: Disabled looping so it stops and resets cleanly when finished
         activeAudioElement.play().then(() => {
             playBtnImgElement.src = "assets/playing.png";
             updateImmersivePlayIconState(true);
@@ -457,7 +457,10 @@ async function toggleTrackPlayback(track, playBtnImgElement) {
             resetAllPlayButtons();
             alert("Unable to stream this specific track. Please choose another song.");
         });
-        activeAudioElement.addEventListener('ended', resetAllPlayButtons);
+        
+        activeAudioElement.addEventListener('ended', () => {
+            resetAllPlayButtons();
+        });
         return;
     }
 
