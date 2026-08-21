@@ -14,6 +14,9 @@
         <div class="blob blob-3"></div>
     </div>
 
+    <!-- Global Audio Player Engine -->
+    <audio id="audio-player" preload="none"></audio>
+
     <main class="app-container">
         <!-- Header -->
         <header class="app-header">
@@ -81,45 +84,40 @@
                     </div>
                     
                     <!-- Dynamic Ambient Mesh Section -->
-<div class="setting-item setting-item-toggle">
-    <div class="setting-text-group">
-        <span class="setting-label-title">Dynamic Ambient Mesh</span>
-        <span class="setting-label-subtitle">Animate background color transitions</span>
-    </div>
-    <label class="ios-switch">
-        <input type="checkbox" id="ambient-mesh-toggle">
-        <span class="ios-slider"></span>
-    </label>
-</div>
+                    <div class="setting-item setting-item-toggle">
+                        <div class="setting-text-group">
+                            <span class="setting-label-title">Dynamic Ambient Mesh</span>
+                            <span class="setting-label-subtitle">Animate background color transitions</span>
+                        </div>
+                        <label class="ios-switch">
+                            <input type="checkbox" id="ambient-mesh-toggle">
+                            <span class="ios-slider"></span>
+                        </label>
+                    </div>
 
-<!-- Dynamic Artwork Motion Section (New) -->
-<div class="setting-item setting-item-toggle">
-    <div class="setting-text-group">
-        <span class="setting-label-title">Dynamic Artwork Motion</span>
-        <span class="setting-label-subtitle">Animate and pan background album art</span>
-    </div>
-    <label class="ios-switch">
-        <input type="checkbox" id="artwork-motion-toggle">
-        <span class="ios-slider"></span>
-    </label>
-</div>
+                    <!-- Dynamic Artwork Motion Section -->
+                    <div class="setting-item setting-item-toggle">
+                        <div class="setting-text-group">
+                            <span class="setting-label-title">Dynamic Artwork Motion</span>
+                            <span class="setting-label-subtitle">Animate and pan background album art</span>
+                        </div>
+                        <label class="ios-switch">
+                            <input type="checkbox" id="artwork-motion-toggle">
+                            <span class="ios-slider"></span>
+                        </label>
+                    </div>
 
-
-
-<!-- Animated Artwork Cover Section (New) -->
-<div class="setting-item setting-item-toggle">
-    <div class="setting-text-group">
-        <span class="setting-label-title">Animated Artwork Cover</span>
-        <span class="setting-label-subtitle">Play motion video album covers</span>
-    </div>
-    <label class="ios-switch">
-        <input type="checkbox" id="animated-cover-toggle">
-        <span class="ios-slider"></span>
-    </label>
-</div>
-
-                    
-
+                    <!-- Animated Artwork Cover Section -->
+                    <div class="setting-item setting-item-toggle">
+                        <div class="setting-text-group">
+                            <span class="setting-label-title">Animated Artwork Cover</span>
+                            <span class="setting-label-subtitle">Play motion video album covers</span>
+                        </div>
+                        <label class="ios-switch">
+                            <input type="checkbox" id="animated-cover-toggle">
+                            <span class="ios-slider"></span>
+                        </label>
+                    </div>
 
                     <!-- Theme Container -->
                     <div class="setting-group-vertical">
@@ -132,48 +130,41 @@
                     </div>
                 </div>
             </div>
-
         </section>
     </main>
 
-
-
     <!-- Full-Screen Immersive Lyrics View Overlay -->
-<div id="immersive-fullscreen-view" class="immersive-view hidden">
-    <div class="immersive-hero">
-    <img id="immersive-artwork" src="" alt="Music Picture">
-    <video id="immersive-artwork-video" class="hidden" autoplay loop muted playsinline></video>
-    <div class="immersive-header-overlay">
-        <div class="immersive-back-btn" id="immersive-back-btn" title="Exit full screen">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    <div id="immersive-fullscreen-view" class="immersive-view hidden">
+        <div class="immersive-hero">
+            <img id="immersive-artwork" src="" alt="Music Picture">
+            <video id="immersive-artwork-video" class="hidden" autoplay loop muted playsinline></video>
+            <div class="immersive-header-overlay">
+                <div class="immersive-back-btn" id="immersive-back-btn" title="Exit full screen">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </div>
+            </div>
+            <div class="immersive-hero-gradient"></div>
+            
+            <div class="immersive-title-box">
+                <div class="immersive-title-row">
+                    <div>
+                        <h1 id="immersive-song-title">Song Title</h1>
+                        <p id="immersive-artist-name">Artist Name</p>
+                    </div>
+                    <!-- Liquid Container Play Button -->
+                    <button id="immersive-play-btn" class="liquid-play-pill" title="Play / Pause">
+                        <img src="assets/pause.png" alt="Play/Pause" id="immersive-play-icon" class="control-icon">
+                    </button>
+                </div>
+            </div>
+
+            <div class="immersive-lyrics-scroll-container">
+                <div id="immersive-lyrics-content">
+                    <!-- Lyrics populate here -->
+                </div>
+            </div>
         </div>
     </div>
-    <div class="immersive-hero-gradient"></div>
-    <!-- Inside #immersive-fullscreen-view -> .immersive-hero -->
-<div class="immersive-title-box">
-    <div class="immersive-title-row">
-        <div>
-            <h1 id="immersive-song-title">Song Title</h1>
-            <p id="immersive-artist-name">Artist Name</p>
-        </div>
-        <!-- Liquid Container Play Button (Red Circled Area) -->
-        <button id="immersive-play-btn" class="liquid-play-pill" title="Play / Pause">
-            <img src="assets/pause.png" alt="Play/Pause" id="immersive-play-icon" class="control-icon">
-        </button>
-    </div>
-</div>
-
-
-
-
-    <div class="immersive-lyrics-scroll-container">
-        <div id="immersive-lyrics-content">
-            <!-- Lyrics populate here -->
-        </div>
-    </div>
-</div>
-
-    
 
     <!-- iOS Floating Glass Bottom Tab Bar -->
     <nav class="floating-tab-bar" id="floating-tab-bar">
@@ -209,9 +200,5 @@
     </nav>
 
     <script src="script.js"></script>
-
-    <!-- Global Audio Player Engine -->
-<audio id="audio-player" preload="none"></audio>
-
 </body>
 </html>
