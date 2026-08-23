@@ -2,13 +2,13 @@
 // LyricSpot - Main Application Script
 // ==========================================
 
-let currentRawPlainLyrics = "";
-let currentSelectedLyricFormat = "plain";
-
-
 // Global Audio Element and Active Tracking State
 let activeAudioElement = null;
 let currentPlayingTrackId = null;
+
+// Lyrics Format Engine State
+let currentRawPlainLyrics = "";
+let currentSelectedLyricFormat = "plain";
 
 // --- Hidden YouTube IFrame Audio Player Controller ---
 let ytPlayer = null;
@@ -140,6 +140,11 @@ const immersiveLyricsContent = document.getElementById('immersive-lyrics-content
 const immersivePlayBtn = document.getElementById('immersive-play-btn');
 const immersivePlayIcon = document.getElementById('immersive-play-icon');
 
+// --- Format Switcher Elements ---
+const formatTriggerBtn = document.getElementById('immersive-format-trigger');
+const formatDropdown = document.getElementById('immersive-format-dropdown');
+const formatOptions = document.querySelectorAll('.format-option');
+
 let searchTimeout = null;
 let currentActiveArtworkUrl = ''; 
 let currentActiveTrackData = null;
@@ -147,45 +152,6 @@ let currentActiveTrackData = null;
 if (lyricsSection) {
     lyricsSection.classList.add('hidden');
 }
-
-
-
-
-const formatTriggerBtn = document.getElementById('immersive-format-trigger');
-const formatDropdown = document.getElementById('immersive-format-dropdown');
-const formatOptions = document.querySelectorAll('.format-option');
-
-if (formatTriggerBtn && formatDropdown) {
-    formatTriggerBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        formatDropdown.classList.toggle('hidden');
-    });
-
-    document.addEventListener('click', (e) => {
-        if (!formatTriggerBtn.contains(e.target) && !formatDropdown.contains(e.target)) {
-            formatDropdown.classList.add('hidden');
-        }
-    });
-}
-
-formatOptions.forEach(option => {
-    option.addEventListener('click', () => {
-        formatOptions.forEach(opt => {
-            opt.classList.remove('active');
-            opt.querySelector('.ticker-icon').classList.add('hidden');
-        });
-
-        option.classList.add('active');
-        option.querySelector('.ticker-icon').classList.remove('hidden');
-
-        const selectedFormat = option.getAttribute('data-format');
-        updateDisplayedLyricsFormat(selectedFormat);
-        formatDropdown.classList.add('hidden');
-    });
-});
-
-
-
 
 // --- Dynamic Artwork Motion Toggle Logic with Persistence ---
 const artworkMotionToggle = document.getElementById('artwork-motion-toggle');
@@ -444,6 +410,104 @@ async function getLyricsData(artist, title, durationMs = 0) {
     return null;
 }
 
+// --- Format Conversion Engine ---
+function convertPlainToLrc(plainText) {
+    const lines = plainText.split('\n');
+    return lines.map((line, index) => {
+        const seconds = index * 3.5;
+        const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
+        const secs = String((seconds % 60).toFixed(3)).padStart(6, '0');
+        return `[${mins}:${secs}] ${line}`;
+    }).join('\n');
+}
+
+function convertPlainToElrc(plainText) {
+    const lines = plainText.split('\n');
+    return lines.map((line, index) => {
+        const startSec = index * 3.5;
+        const endSec = startSec + 3.0;
+        const m1 = String(Math.floor(startSec / 60)).padStart(2, '0');
+        const s1 = String((startSec % 60).toFixed(3)).padStart(6, '0');
+        const m2 = String(Math.floor(endSec / 60)).padStart(2, '0');
+        const s2 = String((endSec % 60).toFixed(3)).padStart(6, '0');
+        return `[${m1}:${s1}]<${m1}:${s1}> ${line} <${m2}:${s2}>`;
+    }).join('\n');
+}
+
+function convertPlainToTtml(plainText, artist, title) {
+    const lines = plainText.split('\n').map(l => `<p>${escapeHTML(l)}</p>`).join('\n        ');
+    return `<?xml version='1.0' encoding='utf-8'?>
+<tt xmlns="http://www.w3.org/ns/ttml" xmlns:itunes="http://music.apple.com/lyric-ttml-internal" xmlns:ttm="http://www.w3.org/ns/ttml#metadata" itunes:timing="Word" xml:lang="es">
+  <head>
+    <metadata>
+      <ttm:agent type="person" xml:id="v1"/>
+      <iTunesMetadata xmlns="http://music.apple.com/lyric-ttml-internal" leadingSilence="0.160">
+        <translations>
+          <translation type="subtitle" xml:lang="en-US"/>
+        </translations>
+      </iTunesMetadata>
+    </metadata>
+  </head>
+  <body>
+    <div>
+      <p>${escapeHTML(title)} - ${escapeHTML(artist)}</p>
+        ${lines}
+    </div>
+  </body>
+</tt>`;
+}
+
+function updateDisplayedLyricsFormat(format) {
+    currentSelectedLyricFormat = format;
+    if (!currentRawPlainLyrics) return;
+
+    let outputText = "";
+    if (format === 'plain') {
+        outputText = currentRawPlainLyrics;
+    } else if (format === 'lrc') {
+        outputText = convertPlainToLrc(currentRawPlainLyrics);
+    } else if (format === 'elrc') {
+        outputText = convertPlainToElrc(currentRawPlainLyrics);
+    } else if (format === 'ttml') {
+        outputText = convertPlainToTtml(currentRawPlainLyrics, lyricsArtistTag.textContent, lyricsTitle.textContent);
+    }
+
+    lyricsContent.textContent = outputText;
+    if (immersiveView && !immersiveView.classList.contains('hidden')) {
+        immersiveLyricsContent.textContent = outputText;
+    }
+}
+
+// --- Dropdown Menu & Ticker Logic ---
+if (formatTriggerBtn && formatDropdown) {
+    formatTriggerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        formatDropdown.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!formatTriggerBtn.contains(e.target) && !formatDropdown.contains(e.target)) {
+            formatDropdown.classList.add('hidden');
+        }
+    });
+}
+
+formatOptions.forEach(option => {
+    option.addEventListener('click', () => {
+        formatOptions.forEach(opt => {
+            opt.classList.remove('active');
+            opt.querySelector('.ticker-icon').classList.add('hidden');
+        });
+
+        option.classList.add('active');
+        option.querySelector('.ticker-icon').classList.remove('hidden');
+
+        const selectedFormat = option.getAttribute('data-format');
+        updateDisplayedLyricsFormat(selectedFormat);
+        formatDropdown.classList.add('hidden');
+    });
+});
+
 // --- Unified Full-Track Stream Playback Handler ---
 async function toggleTrackPlayback(track, playBtnImgElement) {
     if (currentPlayingTrackId === track.trackId) {
@@ -605,7 +669,7 @@ async function openImmersiveFullScreen() {
 
     immersiveSongTitle.textContent = songTitleText;
     immersiveArtistName.textContent = artistNameText;
-    immersiveLyricsContent.innerHTML = lyricsContent.innerHTML;
+    updateDisplayedLyricsFormat(currentSelectedLyricFormat);
 
     let isPlayingActive = false;
     if (currentPlayingTrackId && activeAudioElement && !activeAudioElement.paused) {
@@ -613,7 +677,6 @@ async function openImmersiveFullScreen() {
     }
     updateImmersivePlayIconState(isPlayingActive);
 
-    // Preload cover media synchronously before showing view to avoid image-to-video flashing
     await prepareAndOpenImmersiveView(songTitleText, artistNameText, currentActiveArtworkUrl);
 
     if (localStorage.getItem('lyricspot_artwork_motion') === 'enabled') {
@@ -648,14 +711,12 @@ async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
         const cleanName = cleanTitleForQuery(title);
         const queryTerm = encodeURIComponent(`${cleanName} ${artist}`);
         
-        // Tier 1: Search Apple Music Video catalog
         const mvRes = await fetch(`https://itunes.apple.com/search?term=${queryTerm}&entity=musicVideo&limit=1`);
         const mvData = await mvRes.json();
         if (mvData.results && mvData.results.length > 0 && mvData.results[0].previewUrl) {
             resolvedVideoStreamUrl = mvData.results[0].previewUrl;
         }
 
-        // Tier 2: Search standard track entities with preview clip assets if MV is missing
         if (!resolvedVideoStreamUrl) {
             const trackRes = await fetch(`https://itunes.apple.com/search?term=${queryTerm}&entity=song&limit=5`);
             const trackData = await trackRes.json();
@@ -670,7 +731,6 @@ async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
         console.log("Online animated cover lookup exception:", e);
     }
 
-    // Tier 3: Advanced Universal Algorithmic Loop Pool to guarantee 100% coverage for any song
     if (!resolvedVideoStreamUrl) {
         const universalFallbackLoops = [
             'https://assets.mixkit.co/videos/preview/mixkit-abstract-liquid-background-animation-31932-large.mp4',
@@ -678,7 +738,6 @@ async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
             'https://assets.mixkit.co/videos/preview/mixkit-kaleidoscopic-tunnel-of-neon-lights-41584-large.mp4',
             'https://assets.mixkit.co/videos/preview/mixkit-music-equalizer-background-animation-41908-large.mp4'
         ];
-        // Hash title code to pick a consistent dynamic loop for the track
         let hash = 0;
         for (let i = 0; i < title.length; i++) {
             hash = title.charCodeAt(i) + ((hash << 5) - hash);
@@ -686,7 +745,6 @@ async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
         resolvedVideoStreamUrl = universalFallbackLoops[Math.abs(hash) % universalFallbackLoops.length];
     }
 
-    // Prepare video element in background memory before revealing window
     try {
         immersiveArtworkVideo.src = resolvedVideoStreamUrl;
         immersiveArtworkVideo.load();
@@ -700,7 +758,6 @@ async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
         immersiveArtwork.classList.add('hidden');
         immersiveView.style.setProperty('--immersive-bg-image', `url('${defaultArtworkUrl}')`);
     } catch (err) {
-        // Ultimate fallback to static cover if autoplay policies block video
         immersiveArtworkVideo.classList.add('hidden');
         immersiveArtwork.src = defaultArtworkUrl;
         immersiveArtwork.classList.remove('hidden');
@@ -736,14 +793,14 @@ async function fetchAndDisplayLyrics(artist, title, durationMs) {
     lyricsContent.innerHTML = `<p class="placeholder-text">Fetching lyrics for "${title}"...</p>`;
 
     const lyrics = await getLyricsData(artist, title, durationMs);
-if (lyrics) {
-    currentRawPlainLyrics = lyrics;
-    updateDisplayedLyricsFormat(currentSelectedLyricFormat);
-} else {
-    currentRawPlainLyrics = "";
-    lyricsContent.innerHTML = `<p class="placeholder-text">Lyrics unavailable for <b>${title}</b> across public catalogs.</p>`;
-}
 
+    if (lyrics) {
+        currentRawPlainLyrics = lyrics;
+        updateDisplayedLyricsFormat(currentSelectedLyricFormat);
+    } else {
+        currentRawPlainLyrics = "";
+        lyricsContent.innerHTML = `<p class="placeholder-text">Lyrics unavailable for <b>${title}</b> across public catalogs.</p>`;
+    }
 }
 
 function escapeHTML(str) {
@@ -751,76 +808,6 @@ function escapeHTML(str) {
         tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
 }
-
-
-function convertPlainToLrc(plainText) {
-    const lines = plainText.split('\n');
-    return lines.map((line, index) => {
-        const seconds = index * 3.5; // Estimated interval distribution
-        const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
-        const secs = String((seconds % 60).toFixed(3)).padStart(6, '0');
-        return `[${mins}:${secs}] ${line}`;
-    }).join('\n');
-}
-
-function convertPlainToElrc(plainText) {
-    const lines = plainText.split('\n');
-    return lines.map((line, index) => {
-        const startSec = index * 3.5;
-        const endSec = startSec + 3.0;
-        const m1 = String(Math.floor(startSec / 60)).padStart(2, '0');
-        const s1 = String((startSec % 60).toFixed(3)).padStart(6, '0');
-        const m2 = String(Math.floor(endSec / 60)).padStart(2, '0');
-        const s2 = String((endSec % 60).toFixed(3)).padStart(6, '0');
-        return `[${m1}:${s1}]<${m1}:${s1}> ${line} <${m2}:${s2}>`;
-    }).join('\n');
-}
-
-function convertPlainToTtml(plainText, artist, title) {
-    const lines = plainText.split('\n').map(l => `<p>${escapeHTML(l)}</p>`).join('\n        ');
-    return `<?xml version='1.0' encoding='utf-8'?>
-<tt xmlns="http://www.w3.org/ns/ttml" xmlns:itunes="http://music.apple.com/lyric-ttml-internal" xmlns:ttm="http://www.w3.org/ns/ttml#metadata" itunes:timing="Word" xml:lang="es">
-  <head>
-    <metadata>
-      <ttm:agent type="person" xml:id="v1"/>
-      <iTunesMetadata xmlns="http://music.apple.com/lyric-ttml-internal" leadingSilence="0.160">
-        <translations>
-          <translation type="subtitle" xml:lang="en-US"/>
-        </translations>
-      </iTunesMetadata>
-    </metadata>
-  </head>
-  <body>
-    <div>
-      <p>${escapeHTML(title)} - ${escapeHTML(artist)}</p>
-        ${lines}
-    </div>
-  </body>
-</tt>`;
-}
-
-function updateDisplayedLyricsFormat(format) {
-    currentSelectedLyricFormat = format;
-    if (!currentRawPlainLyrics) return;
-
-    let outputText = "";
-    if (format === 'plain') {
-        outputText = currentRawPlainLyrics;
-    } else if (format === 'lrc') {
-        outputText = convertPlainToLrc(currentRawPlainLyrics);
-    } else if (format === 'elrc') {
-        outputText = convertPlainToElrc(currentRawPlainLyrics);
-    } else if (format === 'ttml') {
-        outputText = convertPlainToTtml(currentRawPlainLyrics, lyricsArtistTag.textContent, lyricsTitle.textContent);
-    }
-
-    lyricsContent.textContent = outputText;
-    if (immersiveView && !immersiveView.classList.contains('hidden')) {
-        immersiveLyricsContent.textContent = outputText;
-    }
-}
-
-
 
 // --- Dynamic Ambient Mesh Toggle Logic with Persistence ---
 const ambientMeshToggle = document.getElementById('ambient-mesh-toggle');
