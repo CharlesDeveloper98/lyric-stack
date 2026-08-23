@@ -144,10 +144,40 @@
                 </button>
             </div>
 
-            <div class="immersive-header-overlay">
-                <div class="immersive-back-btn" id="immersive-back-btn" title="Exit full screen">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                </div>
+            <!-- Inside <div class="immersive-header-overlay"> -->
+<div class="immersive-back-btn" id="immersive-back-btn" title="Exit full screen">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+</div>
+
+<!-- NEW: Liquid Glass Container with "..." and Dropdown Menu -->
+<div class="immersive-format-menu-container" id="immersive-format-menu-container">
+    <button id="immersive-format-trigger" class="liquid-format-pill" title="Lyric Format">
+        <img src="assets/other.png" alt="Format Options" class="format-icon">
+    </button>
+    <div id="immersive-format-dropdown" class="liquid-format-dropdown hidden">
+        <div class="format-option active" data-format="plain">
+            <span>Plain</span>
+            <img src="assets/ticker.png" alt="Selected" class="ticker-icon">
+        </div>
+        <div class="format-divider"></div>
+        <div class="format-option" data-format="lrc">
+            <span>LRC</span>
+            <img src="assets/ticker.png" alt="Selected" class="ticker-icon hidden">
+        </div>
+        <div class="format-divider"></div>
+        <div class="format-option" data-format="elrc">
+            <span>ELRC</span>
+            <img src="assets/ticker.png" alt="Selected" class="ticker-icon hidden">
+        </div>
+        <div class="format-divider"></div>
+        <div class="format-option" data-format="ttml">
+            <span>TTML</span>
+            <img src="assets/ticker.png" alt="Selected" class="ticker-icon hidden">
+        </div>
+    </div>
+</div>
+
+            
             </div>
             <div class="immersive-hero-gradient"></div>
             <div class="immersive-title-box">
