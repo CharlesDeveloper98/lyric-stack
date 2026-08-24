@@ -579,17 +579,27 @@ if (immersiveBackBtn) immersiveBackBtn.addEventListener('click', closeImmersiveF
 
 async function openImmersiveFullScreen() {
     if (!immersiveView) return;
+    
+    // 1. Populate the headers first
     immersiveSongTitle.textContent = lyricsTitle.textContent;
     immersiveArtistName.textContent = lyricsArtistTag.textContent;
+    
+    // 2. Ensure text content is actively populated and pushed to immersive view
     updateDisplayedLyricsFormat(currentSelectedLyricFormat);
 
     let isPlayingActive = (currentPlayingTrackId && activeAudioElement && !activeAudioElement.paused);
     updateImmersivePlayIconState(isPlayingActive);
 
     await prepareAndOpenImmersiveView(lyricsTitle.textContent, lyricsArtistTag.textContent, currentActiveArtworkUrl);
+    
     immersiveView.classList.toggle('artwork-motion-active', localStorage.getItem('lyricspot_artwork_motion') === 'enabled');
     immersiveView.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
+
+    // 3. Force a secondary layout trigger to ensure text is rendered visibly immediately
+    setTimeout(() => {
+        updateDisplayedLyricsFormat(currentSelectedLyricFormat);
+    }, 50);
 }
 
 async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
@@ -661,18 +671,21 @@ async function fetchAndDisplayLyrics(artist, title, durationMs) {
     fullscreenLyricsBtn.textContent = "See full lyrics...";
     lyricsTitle.textContent = title;
     lyricsArtistTag.textContent = artist;
-    lyricsContent.innerHTML = `<p class="placeholder-text">Fetching Apple-synced lyrics...</p>`;
+    lyricsContent.innerHTML = `<p class="placeholder-text">Fetching lyrics...</p>`;
 
     const lyricData = await getLyricsData(artist, title, durationMs);
 
-    if (lyricData && lyricData.syncedLyrics) {
-        currentRawPlainLyrics = lyricData.plainLyrics;
-        currentSyncedLyrics = lyricData.syncedLyrics;
-        currentSelectedLyricFormat = 'lrc';
+    if (lyricData && (lyricData.plainLyrics || lyricData.syncedLyrics)) {
+        currentRawPlainLyrics = lyricData.plainLyrics || lyricData.syncedLyrics.replace(/\[\d{2}:\d{2}\.\d{2,3}\]/g, '').trim();
+        currentSyncedLyrics = lyricData.syncedLyrics || "";
+        
+        // DEFAULT TO PLAIN FORMAT UPON TAPPING A SONG
+        currentSelectedLyricFormat = 'plain';
 
+        // Update dropdown option UI to reflect 'plain' is active
         formatOptions.forEach(opt => {
             const fmt = opt.getAttribute('data-format');
-            if (fmt === 'lrc') {
+            if (fmt === 'plain') {
                 opt.classList.add('active');
                 opt.querySelector('.ticker-icon').classList.remove('hidden');
             } else {
@@ -681,18 +694,16 @@ async function fetchAndDisplayLyrics(artist, title, durationMs) {
             }
         });
 
-        updateDisplayedLyricsFormat('lrc');
-    } else if (lyricData && lyricData.plainLyrics) {
-        currentRawPlainLyrics = lyricData.plainLyrics;
-        currentSyncedLyrics = "";
-        currentSelectedLyricFormat = 'plain';
+        // Display using plain format immediately
         updateDisplayedLyricsFormat('plain');
     } else {
         currentRawPlainLyrics = "";
         currentSyncedLyrics = "";
-        lyricsContent.innerHTML = `<p class="placeholder-text">No synced lyrics found for <b>${title}</b>.</p>`;
+        lyricsContent.innerHTML = `<p class="placeholder-text">No lyrics found for <b>${title}</b>.</p>`;
     }
 }
+
+
 
 function escapeHTML(str) {
     return str.replace(/[&<>'"]/g, 
