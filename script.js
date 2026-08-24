@@ -6,8 +6,9 @@
 let activeAudioElement = null;
 let currentPlayingTrackId = null;
 
-// Lyrics Format Engine State
+// Lyrics Format Engine State (Updated to handle real timestamped lyrics)
 let currentRawPlainLyrics = "";
+let currentSyncedLyrics = "";
 let currentSelectedLyricFormat = "plain";
 
 // --- Hidden YouTube IFrame Audio Player Controller ---
@@ -21,7 +22,6 @@ if (!window.YT) {
     document.head.appendChild(tag);
 }
 
-// Global callback required by YouTube IFrame API
 window.onYouTubeIframeAPIReady = function() {
     let container = document.getElementById('hidden-yt-player-container');
     if (!container) {
@@ -376,41 +376,58 @@ function cleanTitleForQuery(title) {
         .trim();
 }
 
+// --- Updated Lyrics Retrieval (Fetches Real Synced Timestamps) ---
 async function getLyricsData(artist, title, durationMs = 0) {
     const cleanTitle = cleanTitleForQuery(title);
     const durationSec = durationMs ? Math.round(durationMs / 1000) : 0;
 
+    // 1. Try exact match using duration via LRCLIB /api/get
     if (durationSec) {
         try {
             const exactRes = await fetch(`https://lrclib.net/api/get?track_name=${encodeURIComponent(cleanTitle)}&artist_name=${encodeURIComponent(artist)}&duration=${durationSec}`);
             if (exactRes.ok) {
                 const exactData = await exactRes.json();
-                if (exactData && exactData.plainLyrics && exactData.plainLyrics.length > 10) {
-                    return exactData.plainLyrics;
+                if (exactData) {
+                    return {
+                        plainLyrics: exactData.plainLyrics || "",
+                        syncedLyrics: exactData.syncedLyrics || ""
+                    };
                 }
             }
         } catch (e) {}
     }
 
+    // 2. Fallback to searching LRCLIB list endpoint for true synced lyrics
     try {
         const lrclibRes = await fetch(`https://lrclib.net/api/search?track_name=${encodeURIComponent(cleanTitle)}&artist_name=${encodeURIComponent(artist)}`);
         const lrclibData = await lrclibRes.json();
         if (Array.isArray(lrclibData) && lrclibData.length > 0) {
-            const match = lrclibData.find(item => item.plainLyrics && item.plainLyrics.length > 10);
-            if (match) return match.plainLyrics;
+            const match = lrclibData.find(item => item.syncedLyrics && item.syncedLyrics.length > 10) || lrclibData[0];
+            if (match) {
+                return {
+                    plainLyrics: match.plainLyrics || "",
+                    syncedLyrics: match.syncedLyrics || ""
+                };
+            }
         }
     } catch (e) {}
 
+    // 3. Fallback to lyrics.ovh (Plain text only, will auto-generate fallback timestamps if needed)
     try {
         const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
         const data = await res.json();
-        if (data && data.lyrics && data.lyrics.length > 15) return data.lyrics;
+        if (data && data.lyrics && data.lyrics.length > 15) {
+            return {
+                plainLyrics: data.lyrics,
+                syncedLyrics: ""
+            };
+        }
     } catch (e) {}
 
     return null;
 }
 
-// --- Format Conversion Engine ---
+// --- Format Conversion Engine (Supports Real Timestamps) ---
 function convertPlainToLrc(plainText) {
     const lines = plainText.split('\n');
     return lines.map((line, index) => {
@@ -459,17 +476,24 @@ function convertPlainToTtml(plainText, artist, title) {
 
 function updateDisplayedLyricsFormat(format) {
     currentSelectedLyricFormat = format;
-    if (!currentRawPlainLyrics) return;
+    if (!currentRawPlainLyrics && !currentSyncedLyrics) return;
 
     let outputText = "";
     if (format === 'plain') {
-        outputText = currentRawPlainLyrics;
+        outputText = currentRawPlainLyrics || currentSyncedLyrics.replace(/\[\d{2}:\d{2}\.\d{2,3}\]/g, '').trim();
     } else if (format === 'lrc') {
-        outputText = convertPlainToLrc(currentRawPlainLyrics);
+        // Use real synced lyrics if available; otherwise fall back to generated representation
+        outputText = currentSyncedLyrics ? currentSyncedLyrics : convertPlainToLrc(currentRawPlainLyrics);
     } else if (format === 'elrc') {
-        outputText = convertPlainToElrc(currentRawPlainLyrics);
+        if (currentSyncedLyrics) {
+            // Upgrade standard real LRC tags to ELRC tag structures
+            outputText = currentSyncedLyrics.replace(/\[(\d{2}:\d{2}\.\d{2,3})\]\s*(.*)/g, '[$1]<$1> $2 <$1>');
+        } else {
+            outputText = convertPlainToElrc(currentRawPlainLyrics);
+        }
     } else if (format === 'ttml') {
-        outputText = convertPlainToTtml(currentRawPlainLyrics, lyricsArtistTag.textContent, lyricsTitle.textContent);
+        const sourceText = currentRawPlainLyrics || currentSyncedLyrics.replace(/\[\d{2}:\d{2}\.\d{2,3}\]/g, '');
+        outputText = convertPlainToTtml(sourceText, lyricsArtistTag.textContent, lyricsTitle.textContent);
     }
 
     lyricsContent.textContent = outputText;
@@ -621,10 +645,10 @@ function renderSongList(tracks) {
             toggleTrackPlayback(track, playBtnImg);
         });
 
-        getLyricsData(track.artistName, track.trackName, track.trackTimeMillis).then(lyrics => {
+        getLyricsData(track.artistName, track.trackName, track.trackTimeMillis).then(lyricData => {
             const dot = document.getElementById(`dot-${index}`);
             if (dot) {
-                if (lyrics) {
+                if (lyricData && (lyricData.plainLyrics || lyricData.syncedLyrics)) {
                     dot.classList.add('available');
                     dot.title = "Lyrics available";
                 } else {
@@ -792,13 +816,34 @@ async function fetchAndDisplayLyrics(artist, title, durationMs) {
     lyricsArtistTag.textContent = artist;
     lyricsContent.innerHTML = `<p class="placeholder-text">Fetching lyrics for "${title}"...</p>`;
 
-    const lyrics = await getLyricsData(artist, title, durationMs);
+    const lyricData = await getLyricsData(artist, title, durationMs);
 
-    if (lyrics) {
-        currentRawPlainLyrics = lyrics;
+    if (lyricData && (lyricData.plainLyrics || lyricData.syncedLyrics)) {
+        currentRawPlainLyrics = lyricData.plainLyrics;
+        currentSyncedLyrics = lyricData.syncedLyrics;
+        
+        // Default to LRC format view if real synced timestamps exist, otherwise plain
+        if (currentSyncedLyrics) {
+            currentSelectedLyricFormat = 'lrc';
+            // Update active dropdown UI state to match LRC selection visually
+            formatOptions.forEach(opt => {
+                const fmt = opt.getAttribute('data-format');
+                if (fmt === 'lrc') {
+                    opt.classList.add('active');
+                    opt.querySelector('.ticker-icon').classList.remove('hidden');
+                } else {
+                    opt.classList.remove('active');
+                    opt.querySelector('.ticker-icon').classList.add('hidden');
+                }
+            });
+        } else {
+            currentSelectedLyricFormat = 'plain';
+        }
+
         updateDisplayedLyricsFormat(currentSelectedLyricFormat);
     } else {
         currentRawPlainLyrics = "";
+        currentSyncedLyrics = "";
         lyricsContent.innerHTML = `<p class="placeholder-text">Lyrics unavailable for <b>${title}</b> across public catalogs.</p>`;
     }
 }
