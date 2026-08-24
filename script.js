@@ -122,7 +122,6 @@ const formatTriggerBtn = document.getElementById('immersive-format-trigger');
 const formatDropdown = document.getElementById('immersive-format-dropdown');
 const formatOptions = document.querySelectorAll('.format-option');
 
-// --- Action Toolbar Functionality Event Listeners ---
 document.addEventListener('DOMContentLoaded', () => {
     const copyBtn = document.getElementById('immersive-copy-btn');
     const downloadBtn = document.getElementById('immersive-download-btn');
@@ -633,8 +632,10 @@ async function openImmersiveFullScreen() {
     }, 50);
 }
 
+// --- Advanced Multi-Source Universal Animated Cover Resolver ---
 async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
     if (!immersiveArtworkVideo || !immersiveArtwork || !immersiveView) return;
+    
     if (localStorage.getItem('lyricspot_animated_cover') !== 'enabled') {
         immersiveArtwork.src = defaultArtworkUrl;
         immersiveArtwork.classList.remove('hidden');
@@ -646,18 +647,64 @@ async function prepareAndOpenImmersiveView(title, artist, defaultArtworkUrl) {
     }
 
     let resolvedVideoStreamUrl = null;
+
+    // 1. Attempt lookup for official Apple Music / iTunes Music Video preview
     try {
         const cleanName = cleanTitleForQuery(title);
         const queryTerm = encodeURIComponent(`${cleanName} ${artist}`);
-        const mvRes = await fetch(`https://itunes.apple.com/search?term=${queryTerm}&entity=musicVideo&limit=1`);
+        const mvRes = await fetch(`https://itunes.apple.com/search?term=${queryTerm}&entity=musicVideo&limit=1`, { signal: AbortSignal.timeout(3000) });
         const mvData = await mvRes.json();
         if (mvData.results && mvData.results.length > 0 && mvData.results[0].previewUrl) {
             resolvedVideoStreamUrl = mvData.results[0].previewUrl;
         }
     } catch (e) {}
 
+    // 2. If no official music video preview exists, search public Piped/YouTube instances for a lyric video or official visualizer
     if (!resolvedVideoStreamUrl) {
-        resolvedVideoStreamUrl = 'https://assets.mixkit.co/videos/preview/mixkit-abstract-liquid-background-animation-31932-large.mp4';
+        try {
+            const cleanName = cleanTitleForQuery(title);
+            const altQuery = encodeURIComponent(`${artist} ${cleanName} official audio visualizer`);
+            const pipedInstances = [
+                "https://pipedapi.kavin.rocks",
+                "https://pipedapi.privacy.com.de",
+                "https://api.piped.privacydev.net"
+            ];
+
+            for (const instance of pipedInstances) {
+                try {
+                    const searchRes = await fetch(`${instance}/search?q=${altQuery}&filter=videos`, { signal: AbortSignal.timeout(3000) });
+                    const searchData = await searchRes.json();
+                    if (searchData && searchData.items && searchData.items.length > 0) {
+                        const videoId = searchData.items[0].url.split('/watch?v=')[1];
+                        if (videoId) {
+                            const streamRes = await fetch(`${instance}/streams/${videoId}`, { signal: AbortSignal.timeout(3000) });
+                            const streamData = await streamRes.json();
+                            if (streamData && streamData.videoStreams && streamData.videoStreams.length > 0) {
+                                const vStreams = streamData.videoStreams.filter(s => s.url && s.mimeType && s.mimeType.includes('mp4'));
+                                if (vStreams.length > 0) {
+                                    resolvedVideoStreamUrl = vStreams[0].url;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                } catch (err) { continue; }
+            }
+        } catch (e) {}
+    }
+
+    // 3. Universal Fallback: Curated dynamic neon/liquid background motion loops so 100% of songs always animate
+    if (!resolvedVideoStreamUrl) {
+        const universalMotionLoops = [
+            'https://assets.mixkit.co/videos/preview/mixkit-abstract-liquid-background-animation-31932-large.mp4',
+            'https://assets.mixkit.co/videos/preview/mixkit-digital-animation-of-screens-and-lights-41957-large.mp4',
+            'https://assets.mixkit.co/videos/preview/mixkit-fluorescent-lights-in-a-dark-background-42936-large.mp4',
+            'https://assets.mixkit.co/videos/preview/mixkit-neon-lights-background-animation-41716-large.mp4'
+        ];
+        // Hash select reliably based on song title length/char code to keep song visualizer consistent
+        let hashIndex = 0;
+        for (let i = 0; i < title.length; i++) hashIndex += title.charCodeAt(i);
+        resolvedVideoStreamUrl = universalMotionLoops[hashIndex % universalMotionLoops.length];
     }
 
     try {
