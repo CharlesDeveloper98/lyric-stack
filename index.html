@@ -149,28 +149,17 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                 </div>
 
-                <!-- Liquid Glass Container with Format Menu & Action Toolbar Group -->
-                <div class="immersive-header-right-group" style="display: flex; align-items: center; gap: 10px;">
+                <!-- Liquid Glass Container with Format Menu & Action Toolbar Group (Moved to Top Right Position) -->
+                <div class="immersive-header-right-group">
                     
-                    <!-- New Horizontal Liquid Glass Action Container (Copy & Download Toolbar) -->
-                    <div id="immersive-action-toolbar" class="liquid-action-toolbar" style="
-                        display: flex;
-                        align-items: center;
-                        gap: 10px;
-                        padding: 6px 12px;
-                        background: rgba(255, 255, 255, 0.12);
-                        backdrop-filter: blur(20px);
-                        -webkit-backdrop-filter: blur(20px);
-                        border: 1px solid rgba(255, 255, 255, 0.2);
-                        border-radius: 30px;
-                        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-                    ">
-                        <button id="immersive-copy-btn" title="Copy Lyrics" style="background: none; border: none; cursor: pointer; display: flex; align-items: center; padding: 2px;">
-                            <img src="assets/copy.png" alt="Copy" style="width: 16px; height: 16px; filter: invert(1); opacity: 0.9;" />
+                    <!-- Horizontal Liquid Glass Action Container (Copy & Download Toolbar) -->
+                    <div id="immersive-action-toolbar" class="liquid-action-toolbar">
+                        <button id="immersive-copy-btn" class="toolbar-icon-btn" title="Copy Lyrics">
+                            <img src="assets/copy.png" alt="Copy" />
                         </button>
-                        <div style="width: 1px; height: 14px; background: rgba(255, 255, 255, 0.3);"></div>
-                        <button id="immersive-download-btn" title="Download Lyrics File" style="background: none; border: none; cursor: pointer; display: flex; align-items: center; padding: 2px;">
-                            <img src="assets/download.png" alt="Download" style="width: 16px; height: 16px; filter: invert(1); opacity: 0.9;" />
+                        <div class="toolbar-divider"></div>
+                        <button id="immersive-download-btn" class="toolbar-icon-btn" title="Download Lyrics File">
+                            <img src="assets/download.png" alt="Download" />
                         </button>
                     </div>
 
