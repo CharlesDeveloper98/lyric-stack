@@ -122,6 +122,70 @@ const formatTriggerBtn = document.getElementById('immersive-format-trigger');
 const formatDropdown = document.getElementById('immersive-format-dropdown');
 const formatOptions = document.querySelectorAll('.format-option');
 
+// --- Inject Liquid Glass Toolbar Component Dynamically into Immersive View ---
+function ensureImmersiveToolbar() {
+    if (!immersiveView) return;
+    let existingToolbar = document.getElementById('immersive-action-toolbar');
+    if (existingToolbar) return;
+
+    const toolbarHTML = `
+        <div id="immersive-action-toolbar" style="
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 14px;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 30px;
+            z-index: 50;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        ">
+            <button id="immersive-copy-btn" title="Copy Lyrics" style="background:none; border:none; cursor:pointer; display:flex; align-items:center; padding:4px;">
+                <img src="assets/copy.png" alt="Copy" style="width: 18px; height: 18px; filter: invert(1); opacity: 0.9;" />
+            </button>
+            <div style="width: 1px; height: 16px; background: rgba(255, 255, 255, 0.3);"></div>
+            <button id="immersive-download-btn" title="Download Lyrics File" style="background:none; border:none; cursor:pointer; display:flex; align-items:center; padding:4px;">
+                <img src="assets/download.png" alt="Download" style="width: 18px; height: 18px; filter: invert(1); opacity: 0.9;" />
+            </button>
+        </div>
+    `;
+    immersiveView.insertAdjacentHTML('beforeend', toolbarHTML);
+
+    document.getElementById('immersive-copy-btn').addEventListener('click', () => {
+        const textToCopy = immersiveLyricsContent.innerText || lyricsContent.innerText;
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            const copyImg = document.querySelector('#immersive-copy-btn img');
+            copyImg.style.opacity = '0.4';
+            setTimeout(() => { copyImg.style.opacity = '0.9'; }, 600);
+        });
+    });
+
+    document.getElementById('immersive-download-btn').addEventListener('click', () => {
+        const textToDownload = immersiveLyricsContent.innerText || lyricsContent.innerText;
+        const songNameClean = (immersiveSongTitle.textContent || "lyrics").replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        
+        let fileExtension = 'txt';
+        if (currentSelectedLyricFormat === 'lrc') fileExtension = 'lrc';
+        else if (currentSelectedLyricFormat === 'elrc') fileExtension = 'elrc';
+        else if (currentSelectedLyricFormat === 'ttml') fileExtension = 'ttml';
+
+        const blob = new Blob([textToDownload], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${songNameClean}.${fileExtension}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    });
+}
+
 let searchTimeout = null;
 let currentActiveArtworkUrl = ''; 
 let currentActiveTrackData = null;
@@ -294,17 +358,14 @@ function cleanTitleForQuery(title) {
         .trim();
 }
 
-// --- High-Accuracy Synced Lyrics Fetcher (Apple-Sourced Indexing via LRCLIB/Synced Mirrors) ---
 async function getLyricsData(artist, title, durationMs = 0) {
     const cleanTitle = cleanTitleForQuery(title);
     const durationSec = durationMs ? Math.round(durationMs / 1000) : 0;
 
-    // 1. Query LRCLIB search index which indexes precise Apple Music / Musixmatch synced tags
     try {
         const searchRes = await fetch(`https://lrclib.net/api/search?track_name=${encodeURIComponent(cleanTitle)}&artist_name=${encodeURIComponent(artist)}`);
         const searchData = await searchRes.json();
         if (Array.isArray(searchData) && searchData.length > 0) {
-            // Find track with valid matching duration if possible for precise accuracy
             let bestMatch = searchData[0];
             if (durationSec) {
                 const exactDurationMatch = searchData.find(item => Math.abs((item.duration || 0) - durationSec) <= 3);
@@ -319,7 +380,6 @@ async function getLyricsData(artist, title, durationMs = 0) {
         }
     } catch (e) {}
 
-    // 2. Fallback to exact match API endpoint
     if (durationSec) {
         try {
             const exactRes = await fetch(`https://lrclib.net/api/get?track_name=${encodeURIComponent(cleanTitle)}&artist_name=${encodeURIComponent(artist)}&duration=${durationSec}`);
@@ -335,7 +395,6 @@ async function getLyricsData(artist, title, durationMs = 0) {
         } catch (e) {}
     }
 
-    // 3. Final plain-text fallback
     try {
         const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
         const data = await res.json();
@@ -580,23 +639,20 @@ if (immersiveBackBtn) immersiveBackBtn.addEventListener('click', closeImmersiveF
 async function openImmersiveFullScreen() {
     if (!immersiveView) return;
     
-    // 1. Populate the headers first
+    ensureImmersiveToolbar();
+
     immersiveSongTitle.textContent = lyricsTitle.textContent;
     immersiveArtistName.textContent = lyricsArtistTag.textContent;
-    
-    // 2. Ensure text content is actively populated and pushed to immersive view
     updateDisplayedLyricsFormat(currentSelectedLyricFormat);
 
     let isPlayingActive = (currentPlayingTrackId && activeAudioElement && !activeAudioElement.paused);
     updateImmersivePlayIconState(isPlayingActive);
 
     await prepareAndOpenImmersiveView(lyricsTitle.textContent, lyricsArtistTag.textContent, currentActiveArtworkUrl);
-    
     immersiveView.classList.toggle('artwork-motion-active', localStorage.getItem('lyricspot_artwork_motion') === 'enabled');
     immersiveView.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 
-    // 3. Force a secondary layout trigger to ensure text is rendered visibly immediately
     setTimeout(() => {
         updateDisplayedLyricsFormat(currentSelectedLyricFormat);
     }, 50);
@@ -679,10 +735,8 @@ async function fetchAndDisplayLyrics(artist, title, durationMs) {
         currentRawPlainLyrics = lyricData.plainLyrics || lyricData.syncedLyrics.replace(/\[\d{2}:\d{2}\.\d{2,3}\]/g, '').trim();
         currentSyncedLyrics = lyricData.syncedLyrics || "";
         
-        // DEFAULT TO PLAIN FORMAT UPON TAPPING A SONG
         currentSelectedLyricFormat = 'plain';
 
-        // Update dropdown option UI to reflect 'plain' is active
         formatOptions.forEach(opt => {
             const fmt = opt.getAttribute('data-format');
             if (fmt === 'plain') {
@@ -694,7 +748,6 @@ async function fetchAndDisplayLyrics(artist, title, durationMs) {
             }
         });
 
-        // Display using plain format immediately
         updateDisplayedLyricsFormat('plain');
     } else {
         currentRawPlainLyrics = "";
@@ -702,8 +755,6 @@ async function fetchAndDisplayLyrics(artist, title, durationMs) {
         lyricsContent.innerHTML = `<p class="placeholder-text">No lyrics found for <b>${title}</b>.</p>`;
     }
 }
-
-
 
 function escapeHTML(str) {
     return str.replace(/[&<>'"]/g, 
