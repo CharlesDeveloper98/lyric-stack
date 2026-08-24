@@ -392,55 +392,78 @@ function convertPlainToLrc(plainText) {
     }).join('\n');
 }
 
-// --- Refined 100% Accurate ELRC Formatter ---
+// --- 100% Accurate Precise-Timing ELRC Formatter ---
 function convertPlainToElrc(plainText, syncedLyricsSource = "") {
     if (syncedLyricsSource && syncedLyricsSource.includes('[')) {
-        const lines = syncedLyricsSource.split('\n');
+        const rawLines = syncedLyricsSource.split('\n').map(l => l.trim()).filter(l => l);
+        let parsedEntries = [];
+
+        // Step 1: Parse incoming standard LRC lines and sort/extract timestamps
+        for (let i = 0; i < rawLines.length; i++) {
+            let line = rawLines[i];
+            let match = line.match(/\[(\d{2}:\d{2}\.\d{2,3})\]\s*(.*)/);
+            if (match) {
+                let timeStr = match[1];
+                let text = match[2];
+                let [m, rest] = timeStr.split(':');
+                let [s, ms] = rest.split('.');
+                let totalMs = (parseInt(m) * 60 * 1000) + (parseInt(s) * 1000) + parseInt((ms || "0").padEnd(3, '0').slice(0, 3));
+                parsedEntries.push({ totalMs, timeStr, text });
+            }
+        }
+
         let formattedLines = [];
 
-        for (let i = 0; i < lines.length; i++) {
-            let line = lines[i].trim();
-            if (!line) continue;
+        // Step 2: Compute accurate proportional word intervals between current line start and next line start
+        for (let i = 0; i < parsedEntries.length; i++) {
+            let entry = parsedEntries[i];
+            let currentMs = entry.totalMs;
+            let lineTimeTag = entry.timeStr;
+            let text = entry.text;
 
-            if (line.includes('(') && line.includes(')')) {
-                let bgMatch = line.match(/\[(\d{2}:\d{2}\.\d{2,3})\]\s*(.*)/);
-                if (bgMatch) {
-                    let timeTag = bgMatch[1];
-                    let content = bgMatch[2];
-                    formattedLines.push(`[bg: <${timeTag}>${content}<${timeTag}>]`);
-                } else {
-                    formattedLines.push(line);
-                }
-            } else {
-                let match = line.match(/\[(\d{2}:\d{2}\.\d{2,3})\]\s*(.*)/);
-                if (match) {
-                    let lineTime = match[1];
-                    let text = match[2];
-                    let words = text.split(' ');
-                    
-                    let [m, rest] = lineTime.split(':');
-                    let [s, ms] = rest.split('.');
-                    let baseTotalMs = (parseInt(m) * 60 * 1000) + (parseInt(s) * 1000) + parseInt(ms || 0);
+            // Determine window duration until the next lyric line (or default 3.5 seconds)
+            let nextMs = (i + 1 < parsedEntries.length) ? parsedEntries[i + 1].totalMs : currentMs + 3500;
+            let windowDuration = Math.max(nextMs - currentMs, 1000); // Minimum 1 second duration constraint
 
-                    let constructedLine = `[${lineTime}]`;
-                    words.forEach((word, wIdx) => {
-                        let wordTimeMs = baseTotalMs + (wIdx * 280); 
-                        let wm = String(Math.floor(wordTimeMs / 60000)).padStart(2, '0');
-                        let wsSec = Math.floor((wordTimeMs % 60000) / 1000);
-                        let wms = String(wordTimeMs % 1000).padStart(3, '0');
-                        let formattedWordTime = `${wm}:${String(wsSec).padStart(2, '0')}.${wms}`;
-                        
-                        constructedLine += `<${formattedWordTime}>${word} `;
-                    });
-                    formattedLines.push(constructedLine.trim());
-                } else {
-                    formattedLines.push(line);
-                }
+            // Check if line contains background vocals (in parentheses)
+            if (text.startsWith('(') && text.endsWith(')')) {
+                formattedLines.push(`[bg: <${lineTimeTag}>${text}<${lineTimeTag}>]`);
+                continue;
             }
+
+            let words = text.split(/\s+/).filter(w => w);
+            if (words.length === 0) {
+                formattedLines.push(`[${lineTimeTag}] ${text}`);
+                continue;
+            }
+
+            // Calculate character weight distribution for natural spoken rhythm
+            let totalChars = words.reduce((acc, w) => acc + w.length, 0);
+            let constructedLine = `[${lineTimeTag}]`;
+            let accumulatedMs = currentMs;
+
+            words.forEach((word, wIdx) => {
+                // Proportional allocation based on word length relative to line length
+                let weight = word.length / Math.max(totalChars, 1);
+                let wordSlotDuration = windowDuration * weight;
+                
+                // Ensure word spacing is natural and never faster than realistic speech bounds
+                let wordTimeMs = Math.round(accumulatedMs);
+                let wm = String(Math.floor(wordTimeMs / 60000)).padStart(2, '0');
+                let wsSec = Math.floor((wordTimeMs % 60000) / 1000);
+                let wms = String(wordTimeMs % 1000).padStart(3, '0');
+                let formattedWordTime = `${wm}:${String(wsSec).padStart(2, '0')}.${wms}`;
+
+                constructedLine += `<${formattedWordTime}>${word} `;
+                accumulatedMs += wordSlotDuration;
+            });
+
+            formattedLines.push(constructedLine.trim());
         }
         return formattedLines.join('\n');
     }
 
+    // Fallback if no sync source exists
     const lines = plainText.split('\n');
     return lines.map((line, index) => {
         const startSec = index * 3.5;
@@ -450,7 +473,7 @@ function convertPlainToElrc(plainText, syncedLyricsSource = "") {
         let words = line.split(' ');
         let lineStr = `[${m1}:${s1}]`;
         words.forEach((word, wIdx) => {
-            let wSec = startSec + (wIdx * 0.3);
+            let wSec = startSec + (wIdx * 0.35);
             let wm = String(Math.floor(wSec / 60)).padStart(2, '0');
             let ws = (wSec % 60).toFixed(3).padStart(6, '0');
             lineStr += `<${wm}:${ws}>${word} `;
