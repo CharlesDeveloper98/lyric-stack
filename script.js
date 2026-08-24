@@ -122,69 +122,46 @@ const formatTriggerBtn = document.getElementById('immersive-format-trigger');
 const formatDropdown = document.getElementById('immersive-format-dropdown');
 const formatOptions = document.querySelectorAll('.format-option');
 
-// --- Inject Liquid Glass Toolbar Component Dynamically into Immersive View ---
-function ensureImmersiveToolbar() {
-    if (!immersiveView) return;
-    let existingToolbar = document.getElementById('immersive-action-toolbar');
-    if (existingToolbar) return;
+// --- Action Toolbar Functionality Event Listeners ---
+document.addEventListener('DOMContentLoaded', () => {
+    const copyBtn = document.getElementById('immersive-copy-btn');
+    const downloadBtn = document.getElementById('immersive-download-btn');
 
-    const toolbarHTML = `
-        <div id="immersive-action-toolbar" style="
-            position: absolute;
-            top: 24px;
-            right: 24px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 8px 14px;
-            background: rgba(255, 255, 255, 0.12);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 30px;
-            z-index: 50;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-        ">
-            <button id="immersive-copy-btn" title="Copy Lyrics" style="background:none; border:none; cursor:pointer; display:flex; align-items:center; padding:4px;">
-                <img src="assets/copy.png" alt="Copy" style="width: 18px; height: 18px; filter: invert(1); opacity: 0.9;" />
-            </button>
-            <div style="width: 1px; height: 16px; background: rgba(255, 255, 255, 0.3);"></div>
-            <button id="immersive-download-btn" title="Download Lyrics File" style="background:none; border:none; cursor:pointer; display:flex; align-items:center; padding:4px;">
-                <img src="assets/download.png" alt="Download" style="width: 18px; height: 18px; filter: invert(1); opacity: 0.9;" />
-            </button>
-        </div>
-    `;
-    immersiveView.insertAdjacentHTML('beforeend', toolbarHTML);
-
-    document.getElementById('immersive-copy-btn').addEventListener('click', () => {
-        const textToCopy = immersiveLyricsContent.innerText || lyricsContent.innerText;
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            const copyImg = document.querySelector('#immersive-copy-btn img');
-            copyImg.style.opacity = '0.4';
-            setTimeout(() => { copyImg.style.opacity = '0.9'; }, 600);
+    if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+            const textToCopy = immersiveLyricsContent.innerText || lyricsContent.innerText;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const copyImg = copyBtn.querySelector('img');
+                if (copyImg) {
+                    copyImg.style.opacity = '0.4';
+                    setTimeout(() => { copyImg.style.opacity = '0.9'; }, 600);
+                }
+            });
         });
-    });
+    }
 
-    document.getElementById('immersive-download-btn').addEventListener('click', () => {
-        const textToDownload = immersiveLyricsContent.innerText || lyricsContent.innerText;
-        const songNameClean = (immersiveSongTitle.textContent || "lyrics").replace(/[^a-z0-9]/gi, '_').toLowerCase();
-        
-        let fileExtension = 'txt';
-        if (currentSelectedLyricFormat === 'lrc') fileExtension = 'lrc';
-        else if (currentSelectedLyricFormat === 'elrc') fileExtension = 'elrc';
-        else if (currentSelectedLyricFormat === 'ttml') fileExtension = 'ttml';
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', () => {
+            const textToDownload = immersiveLyricsContent.innerText || lyricsContent.innerText;
+            const songNameClean = (immersiveSongTitle.textContent || "lyrics").replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            
+            let fileExtension = 'txt';
+            if (currentSelectedLyricFormat === 'lrc') fileExtension = 'lrc';
+            else if (currentSelectedLyricFormat === 'elrc') fileExtension = 'elrc';
+            else if (currentSelectedLyricFormat === 'ttml') fileExtension = 'ttml';
 
-        const blob = new Blob([textToDownload], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${songNameClean}.${fileExtension}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    });
-}
+            const blob = new Blob([textToDownload], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${songNameClean}.${fileExtension}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    }
+});
 
 let searchTimeout = null;
 let currentActiveArtworkUrl = ''; 
@@ -638,8 +615,6 @@ if (immersiveBackBtn) immersiveBackBtn.addEventListener('click', closeImmersiveF
 
 async function openImmersiveFullScreen() {
     if (!immersiveView) return;
-    
-    ensureImmersiveToolbar();
 
     immersiveSongTitle.textContent = lyricsTitle.textContent;
     immersiveArtistName.textContent = lyricsArtistTag.textContent;
