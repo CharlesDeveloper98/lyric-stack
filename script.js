@@ -1,5 +1,5 @@
 // ==========================================
-// LyricSpot - Main Application Script (Apple-Synced Engine v3.5 - 100% Accurate Word-Sync)
+// LyricSpot - Main Application Script (Apple-Synced Engine v4.0 - Live Online Multi-Source Parser)
 // ==========================================
 
 let activeAudioElement = null;
@@ -7,7 +7,7 @@ let currentPlayingTrackId = null;
 
 let currentRawPlainLyrics = "";
 let currentSyncedLyrics = "";
-let currentStructuredLyricsFile = null; // Stores real ELRC/TTML YAML/JSON payload if provided by source
+let currentStructuredLyricsFile = null; 
 let currentSelectedLyricFormat = "plain";
 
 let ytPlayer = null;
@@ -335,10 +335,12 @@ function cleanTitleForQuery(title) {
         .trim();
 }
 
+// --- Direct Multi-Source Online Lyric Fetcher ---
 async function getLyricsData(artist, title, durationMs = 0) {
     const cleanTitle = cleanTitleForQuery(title);
     const durationSec = durationMs ? Math.round(durationMs / 1000) : 0;
 
+    // 1. Primary High-Accuracy Online Endpoint (LRCLIB Cloud + Network Parsers)
     try {
         const params = new URLSearchParams({ track_name: cleanTitle, artist_name: artist });
         if (durationSec) params.append('duration', durationSec);
@@ -354,7 +356,7 @@ async function getLyricsData(artist, title, durationMs = 0) {
                 const exactMatch = searchData.find(item => Math.abs((item.duration || 0) - durationSec) <= 2);
                 if (exactMatch) bestMatch = exactMatch;
             }
-            if (bestMatch) {
+            if (bestMatch && (bestMatch.syncedLyrics || bestMatch.plainLyrics)) {
                 return {
                     plainLyrics: decodeHtmlEntities(bestMatch.plainLyrics || ""),
                     syncedLyrics: decodeHtmlEntities(bestMatch.syncedLyrics || ""),
@@ -365,6 +367,25 @@ async function getLyricsData(artist, title, durationMs = 0) {
         }
     } catch (e) {}
 
+    // 2. Secondary Direct Get Request Lookup by exact query
+    try {
+        const getRes = await fetch(`https://lrclib.net/api/get?artist_name=${encodeURIComponent(artist)}&track_name=${encodeURIComponent(cleanTitle)}`, {
+            headers: { 'Lrclib-Client': 'LyricSpot iOS 26 (https://github.com/lyricspot/app)' }
+        });
+        if (getRes.ok) {
+            const getData = await getRes.json();
+            if (getData && (getData.syncedLyrics || getData.plainLyrics)) {
+                return {
+                    plainLyrics: decodeHtmlEntities(getData.plainLyrics || ""),
+                    syncedLyrics: decodeHtmlEntities(getData.syncedLyrics || ""),
+                    lyricsFile: getData.lyricsfile || null,
+                    instrumental: getData.instrumental || false
+                };
+            }
+        }
+    } catch (e) {}
+
+    // 3. Fallback Online Lyrics Source (Lyrics.ovh)
     try {
         const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
         const data = await res.json();
@@ -393,7 +414,6 @@ function convertPlainToLrc(plainText) {
     }).join('\n');
 }
 
-// --- Syllable counting helper for ultra-precise word scaling ---
 function countSyllables(word) {
     const cleanWord = word.toLowerCase().replace(/[^a-z]/g, '');
     if (cleanWord.length <= 3) return 1;
@@ -401,14 +421,12 @@ function countSyllables(word) {
     return match ? Math.max(1, match.length) : 1;
 }
 
-// --- 100% Accurate Advanced Proportional ELRC Engine ---
+// --- Enhanced ELRC Engine with Online Metadata Payload Support ---
 function convertPlainToElrc(plainText, syncedLyricsSource = "", structuredFile = null) {
-    // If native structure/lyricsfile data exists from server, parse it directly for absolute precision
     if (structuredFile) {
         try {
-            // Parses structured YAML or JSON lines format if present
-            let parsedLines = typeof structuredFile === 'string' ? parseLyricsFileYaml(structuredFile) : structuredFile;
-            if (parsedLines && parsedLines.length > 0) {
+            let parsedLines = typeof structuredFile === 'string' ? JSON.parse(structuredFile) : structuredFile;
+            if (Array.isArray(parsedLines) && parsedLines.length > 0) {
                 return parsedLines.map(line => {
                     let mins = String(Math.floor(line.start / 60)).padStart(2, '0');
                     let secs = Math.floor(line.start % 60);
@@ -469,7 +487,6 @@ function convertPlainToElrc(plainText, syncedLyricsSource = "", structuredFile =
             continue;
         }
 
-        // Syllable and phonetic weight balancing for natural pacing
         let wordWeights = words.map(w => countSyllables(w) * 1.2 + (w.replace(/[^a-zA-Z0-9]/g, '').length * 0.3));
         let totalWeight = wordWeights.reduce((sum, w) => sum + w, 0);
 
@@ -496,26 +513,15 @@ function convertPlainToElrc(plainText, syncedLyricsSource = "", structuredFile =
     return formattedLines.join('\n');
 }
 
-// Fallback simple YAML block extractor if structural file is text
-function parseLyricsFileYaml(yamlText) {
-    // If it's standard JSON string from LRCLIB
-    try {
-        const obj = JSON.parse(yamlText);
-        if (Array.isArray(obj)) return obj;
-        if (obj.lines) return obj.lines;
-    } catch(e) {}
-    return null;
-}
-
-// --- 100% Accurate TTML Engine (Apple Music Specification Compliant) ---
+// --- TTML Engine (Apple Music Spec) ---
 function convertPlainToTtml(plainText, artist, title, syncedSource = "", structuredFile = null) {
     let linesArray = [];
     let parsed = [];
 
     if (structuredFile) {
         try {
-            let structuredLines = typeof structuredFile === 'string' ? parseLyricsFileYaml(structuredFile) : structuredFile;
-            if (structuredLines && structuredLines.length > 0) {
+            let structuredLines = typeof structuredFile === 'string' ? JSON.parse(structuredFile) : structuredFile;
+            if (Array.isArray(structuredLines) && structuredLines.length > 0) {
                 parsed = structuredLines.map(l => ({
                     time: l.start,
                     endTime: l.end || (l.start + 3.5),
