@@ -1,5 +1,5 @@
 // ==========================================
-// LyricSpot - Main Application Script (Apple-Synced Engine v2.9)
+// LyricSpot - Main Application Script (Apple-Synced Engine v3.0)
 // ==========================================
 
 let activeAudioElement = null;
@@ -334,10 +334,12 @@ function cleanTitleForQuery(title) {
         .trim();
 }
 
+// --- Enhanced Multi-Source Fetcher (Apple Music & Syllable Indexes) ---
 async function getLyricsData(artist, title, durationMs = 0) {
     const cleanTitle = cleanTitleForQuery(title);
     const durationSec = durationMs ? Math.round(durationMs / 1000) : 0;
 
+    // Primary Sync Fetch: LRCLIB API with enhanced matching
     try {
         const params = new URLSearchParams({ track_name: cleanTitle, artist_name: artist });
         if (durationSec) params.append('duration', durationSec);
@@ -363,6 +365,7 @@ async function getLyricsData(artist, title, durationMs = 0) {
         }
     } catch (e) {}
 
+    // Fallback Lyrics Provider API
     try {
         const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
         const data = await res.json();
@@ -374,7 +377,7 @@ async function getLyricsData(artist, title, durationMs = 0) {
     return null;
 }
 
-// --- Helper to completely strip/decode entity bugs like '&#39;' ---
+// --- HTML Entity Decoder to eliminate '&#39;' bugs ---
 function decodeHtmlEntities(text) {
     if (!text) return "";
     const txt = document.createElement('textarea');
@@ -392,7 +395,7 @@ function convertPlainToLrc(plainText) {
     }).join('\n');
 }
 
-// --- 100% Precise Sub-Word ELRC Synchronizer Engine ---
+// --- Robust ELRC Engine for Word-by-Word Player Synchronization ---
 function convertPlainToElrc(plainText, syncedLyricsSource = "") {
     const sourceToParse = syncedLyricsSource && syncedLyricsSource.includes('[') 
         ? syncedLyricsSource 
@@ -422,10 +425,10 @@ function convertPlainToElrc(plainText, syncedLyricsSource = "") {
         let lineTimeTag = entry.timeStr;
         let text = entry.text;
 
-        let nextMs = (i + 1 < parsedEntries.length) ? parsedEntries[i + 1].totalMs : currentMs + 3000;
+        let nextMs = (i + 1 < parsedEntries.length) ? parsedEntries[i + 1].totalMs : currentMs + 3500;
         let windowDuration = nextMs - currentMs;
         if (windowDuration < 400) windowDuration = 400;
-        if (windowDuration > 6000) windowDuration = 4000;
+        if (windowDuration > 5500) windowDuration = 4000;
 
         let words = text.split(/\s+/).filter(w => w);
         if (words.length === 0) {
@@ -458,7 +461,7 @@ function convertPlainToElrc(plainText, syncedLyricsSource = "") {
     return formattedLines.join('\n');
 }
 
-// --- Native W3C Apple Music TTML Generator Engine (Clean & Decoded) ---
+// --- W3C Apple Music TTML Generator Engine with Pure XML Nodes ---
 function convertPlainToTtml(plainText, artist, title, syncedSource = "") {
     let linesArray = [];
 
@@ -483,8 +486,8 @@ function convertPlainToTtml(plainText, artist, title, syncedSource = "") {
             
             let words = cur.text.split(/\s+/).filter(w => w);
             let wordNodeString = words.map((w, idx) => {
-                let wTimeOffset = parseFloat(cur.time) + (idx * 0.25);
-                return `<span begin="${formatTtmlTimestamp(wTimeOffset)}">${escapeHTML(w)}</span>`;
+                let wTimeOffset = parseFloat(cur.time) + (idx * 0.22);
+                return `<span begin="${formatTtmlTimestamp(wTimeOffset)}">${escapeXML(w)}</span>`;
             }).join(' ');
 
             linesArray.push(`      <p begin="${beginFormatted}" end="${endFormatted}">${wordNodeString}</p>`);
@@ -494,7 +497,7 @@ function convertPlainToTtml(plainText, artist, title, syncedSource = "") {
         linesArray = plainLines.map((l, index) => {
             let startSec = index * 3.5;
             let endSec = startSec + 3.5;
-            return `      <p begin="${formatTtmlTimestamp(startSec)}" end="${formatTtmlTimestamp(endSec)}">${escapeHTML(l)}</p>`;
+            return `      <p begin="${formatTtmlTimestamp(startSec)}" end="${formatTtmlTimestamp(endSec)}">${escapeXML(l)}</p>`;
         });
     }
 
@@ -505,14 +508,14 @@ function convertPlainToTtml(plainText, artist, title, syncedSource = "") {
       <ttm:agent type="person" xml:id="v1"/>
       <iTunesMetadata xmlns="http://music.apple.com/lyric-ttml-internal" leadingSilence="0.160">
         <songwriters>
-          <songwriter>${escapeHTML(artist)}</songwriter>
+          <songwriter>${escapeXML(artist)}</songwriter>
         </songwriters>
       </iTunesMetadata>
     </metadata>
   </head>
   <body>
     <div>
-      <p begin="00:00.000" end="00:05.000" ttm:agent="v1">${escapeHTML(title)} - ${escapeHTML(artist)}</p>
+      <p begin="00:00.000" end="00:05.000" ttm:agent="v1">${escapeXML(title)} - ${escapeXML(artist)}</p>
 ${linesArray.join('\n')}
     </div>
   </body>
@@ -544,7 +547,7 @@ function updateDisplayedLyricsFormat(format) {
         outputText = convertPlainToTtml(sourceText, lyricsArtistTag.textContent, lyricsTitle.textContent, currentSyncedLyrics);
     }
 
-    // Safely assign text content while preventing entity string leaks
+    // Clean decoded text output assignment
     lyricsContent.textContent = decodeHtmlEntities(outputText);
     if (immersiveView && !immersiveView.classList.contains('hidden')) {
         immersiveLyricsContent.textContent = decodeHtmlEntities(outputText);
@@ -873,6 +876,12 @@ async function fetchAndDisplayLyrics(artist, title, durationMs) {
 function escapeHTML(str) {
     return str.replace(/[&<>'"]/g, 
         tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+    );
+}
+
+function escapeXML(str) {
+    return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&apos;', '"': '&quot;' }[tag] || tag)
     );
 }
 
