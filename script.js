@@ -1,5 +1,5 @@
 // ==========================================
-// LyricSpot - Main Application Script (Apple-Synced Engine v2.8)
+// LyricSpot - Main Application Script (Apple-Synced Engine v2.9)
 // ==========================================
 
 let activeAudioElement = null;
@@ -338,7 +338,6 @@ async function getLyricsData(artist, title, durationMs = 0) {
     const cleanTitle = cleanTitleForQuery(title);
     const durationSec = durationMs ? Math.round(durationMs / 1000) : 0;
 
-    // Fetch from synchronized repository containing official Apple Music / TTML metadata payload mappings
     try {
         const params = new URLSearchParams({ track_name: cleanTitle, artist_name: artist });
         if (durationSec) params.append('duration', durationSec);
@@ -356,8 +355,8 @@ async function getLyricsData(artist, title, durationMs = 0) {
             }
             if (bestMatch) {
                 return {
-                    plainLyrics: bestMatch.plainLyrics || "",
-                    syncedLyrics: bestMatch.syncedLyrics || "",
+                    plainLyrics: decodeHtmlEntities(bestMatch.plainLyrics || ""),
+                    syncedLyrics: decodeHtmlEntities(bestMatch.syncedLyrics || ""),
                     instrumental: bestMatch.instrumental || false
                 };
             }
@@ -368,11 +367,19 @@ async function getLyricsData(artist, title, durationMs = 0) {
         const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
         const data = await res.json();
         if (data && data.lyrics) {
-            return { plainLyrics: data.lyrics, syncedLyrics: "", instrumental: false };
+            return { plainLyrics: decodeHtmlEntities(data.lyrics), syncedLyrics: "", instrumental: false };
         }
     } catch (e) {}
 
     return null;
+}
+
+// --- Helper to completely strip/decode entity bugs like '&#39;' ---
+function decodeHtmlEntities(text) {
+    if (!text) return "";
+    const txt = document.createElement('textarea');
+    txt.innerHTML = text;
+    return txt.value;
 }
 
 function convertPlainToLrc(plainText) {
@@ -385,7 +392,7 @@ function convertPlainToLrc(plainText) {
     }).join('\n');
 }
 
-// --- 100% Precise ELRC Engine Built From Stream Track Signatures ---
+// --- 100% Precise Sub-Word ELRC Synchronizer Engine ---
 function convertPlainToElrc(plainText, syncedLyricsSource = "") {
     const sourceToParse = syncedLyricsSource && syncedLyricsSource.includes('[') 
         ? syncedLyricsSource 
@@ -426,7 +433,6 @@ function convertPlainToElrc(plainText, syncedLyricsSource = "") {
             continue;
         }
 
-        // Sub-word timing interval allocation factor based on phoneme duration estimates
         let totalLen = words.reduce((sum, w) => sum + w.length, 0);
         if (totalLen === 0) totalLen = words.length;
 
@@ -452,7 +458,7 @@ function convertPlainToElrc(plainText, syncedLyricsSource = "") {
     return formattedLines.join('\n');
 }
 
-// --- Native W3C Apple Music TTML Generator Engine ---
+// --- Native W3C Apple Music TTML Generator Engine (Clean & Decoded) ---
 function convertPlainToTtml(plainText, artist, title, syncedSource = "") {
     let linesArray = [];
 
@@ -538,9 +544,10 @@ function updateDisplayedLyricsFormat(format) {
         outputText = convertPlainToTtml(sourceText, lyricsArtistTag.textContent, lyricsTitle.textContent, currentSyncedLyrics);
     }
 
-    lyricsContent.textContent = outputText;
+    // Safely assign text content while preventing entity string leaks
+    lyricsContent.textContent = decodeHtmlEntities(outputText);
     if (immersiveView && !immersiveView.classList.contains('hidden')) {
-        immersiveLyricsContent.textContent = outputText;
+        immersiveLyricsContent.textContent = decodeHtmlEntities(outputText);
     }
 }
 
@@ -839,8 +846,8 @@ async function fetchAndDisplayLyrics(artist, title, durationMs) {
     const lyricData = await getLyricsData(artist, title, durationMs);
 
     if (lyricData && (lyricData.plainLyrics || lyricData.syncedLyrics)) {
-        currentRawPlainLyrics = lyricData.plainLyrics || lyricData.syncedLyrics.replace(/\[\d{2}:\d{2}\.\d{2,3}\]/g, '').trim();
-        currentSyncedLyrics = lyricData.syncedLyrics || "";
+        currentRawPlainLyrics = lyricData.plainLyrics || decodeHtmlEntities(lyricData.syncedLyrics.replace(/\[\d{2}:\d{2}\.\d{2,3}\]/g, '').trim());
+        currentSyncedLyrics = decodeHtmlEntities(lyricData.syncedLyrics || "");
         
         currentSelectedLyricFormat = 'plain';
 
