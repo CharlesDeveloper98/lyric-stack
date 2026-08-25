@@ -1,5 +1,5 @@
 // ==========================================
-// LyricSpot - Main Application Script (Apple-Synced Engine v3.0)
+// LyricSpot - Main Application Script (Apple-Synced Engine v3.1)
 // ==========================================
 
 let activeAudioElement = null;
@@ -334,12 +334,10 @@ function cleanTitleForQuery(title) {
         .trim();
 }
 
-// --- Enhanced Multi-Source Fetcher (Apple Music & Syllable Indexes) ---
 async function getLyricsData(artist, title, durationMs = 0) {
     const cleanTitle = cleanTitleForQuery(title);
     const durationSec = durationMs ? Math.round(durationMs / 1000) : 0;
 
-    // Primary Sync Fetch: LRCLIB API with enhanced matching
     try {
         const params = new URLSearchParams({ track_name: cleanTitle, artist_name: artist });
         if (durationSec) params.append('duration', durationSec);
@@ -365,7 +363,6 @@ async function getLyricsData(artist, title, durationMs = 0) {
         }
     } catch (e) {}
 
-    // Fallback Lyrics Provider API
     try {
         const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
         const data = await res.json();
@@ -377,7 +374,6 @@ async function getLyricsData(artist, title, durationMs = 0) {
     return null;
 }
 
-// --- HTML Entity Decoder to eliminate '&#39;' bugs ---
 function decodeHtmlEntities(text) {
     if (!text) return "";
     const txt = document.createElement('textarea');
@@ -395,7 +391,7 @@ function convertPlainToLrc(plainText) {
     }).join('\n');
 }
 
-// --- Robust ELRC Engine for Word-by-Word Player Synchronization ---
+// --- Enhanced Proportional ELRC Engine (Exact Sentence Boundary Mapping) ---
 function convertPlainToElrc(plainText, syncedLyricsSource = "") {
     const sourceToParse = syncedLyricsSource && syncedLyricsSource.includes('[') 
         ? syncedLyricsSource 
@@ -425,10 +421,10 @@ function convertPlainToElrc(plainText, syncedLyricsSource = "") {
         let lineTimeTag = entry.timeStr;
         let text = entry.text;
 
-        let nextMs = (i + 1 < parsedEntries.length) ? parsedEntries[i + 1].totalMs : currentMs + 3500;
-        let windowDuration = nextMs - currentMs;
-        if (windowDuration < 400) windowDuration = 400;
-        if (windowDuration > 5500) windowDuration = 4000;
+        let nextMs = (i + 1 < parsedEntries.length) ? parsedEntries[i + 1].totalMs : currentMs + 4000;
+        let lineSpanDuration = nextMs - currentMs;
+        if (lineSpanDuration < 500) lineSpanDuration = 500;
+        if (lineSpanDuration > 7000) lineSpanDuration = 6000;
 
         let words = text.split(/\s+/).filter(w => w);
         if (words.length === 0) {
@@ -436,15 +432,17 @@ function convertPlainToElrc(plainText, syncedLyricsSource = "") {
             continue;
         }
 
-        let totalLen = words.reduce((sum, w) => sum + w.length, 0);
-        if (totalLen === 0) totalLen = words.length;
+        // Calculate dynamic proportional weights based on word length + natural syllable pauses
+        let wordWeights = words.map(w => Math.max(1, w.replace(/[^a-zA-Z0-9]/g, '').length));
+        let totalWeight = wordWeights.reduce((sum, w) => sum + w, 0);
 
         let constructedLine = `[${lineTimeTag}]`;
         let accumulatedMs = currentMs;
 
-        words.forEach((word) => {
-            let weight = word.length / totalLen;
-            let wordDuration = windowDuration * weight;
+        for (let wIdx = 0; wIdx < words.length; wIdx++) {
+            let word = words[wIdx];
+            let weightProportion = wordWeights[wIdx] / totalWeight;
+            let wordDuration = lineSpanDuration * weightProportion;
 
             let wordTimeMs = Math.round(accumulatedMs);
             let wm = String(Math.floor(wordTimeMs / 60000)).padStart(2, '0');
@@ -453,7 +451,7 @@ function convertPlainToElrc(plainText, syncedLyricsSource = "") {
             
             constructedLine += `<${wm}:${String(wsSec).padStart(2, '0')}.${wms}>${word} `;
             accumulatedMs += wordDuration;
-        });
+        }
 
         formattedLines.push(constructedLine.trim());
     }
@@ -461,7 +459,7 @@ function convertPlainToElrc(plainText, syncedLyricsSource = "") {
     return formattedLines.join('\n');
 }
 
-// --- W3C Apple Music TTML Generator Engine with Pure XML Nodes ---
+// --- Enhanced Proportional TTML Engine (Exact Word Span Timing Windows) ---
 function convertPlainToTtml(plainText, artist, title, syncedSource = "") {
     let linesArray = [];
 
@@ -474,20 +472,30 @@ function convertPlainToTtml(plainText, artist, title, syncedSource = "") {
                 let [m, rest] = match[1].split(':');
                 let [s, ms] = rest.split('.');
                 let totalSec = (parseInt(m, 10) * 60) + parseInt(s, 10) + (parseInt((ms || "0").padEnd(3, '0'), 10) / 1000);
-                parsed.push({ time: totalSec.toFixed(3), text: match[2] });
+                parsed.push({ time: totalSec, text: match[2] });
             }
         }
 
         for (let i = 0; i < parsed.length; i++) {
             let cur = parsed[i];
-            let nextTime = (i + 1 < parsed.length) ? parsed[i + 1].time : (parseFloat(cur.time) + 4.0).toFixed(3);
+            let nextTime = (i + 1 < parsed.length) ? parsed[i + 1].time : cur.time + 4.0;
+            let lineDuration = nextTime - cur.time;
+            if (lineDuration < 0.5) lineDuration = 0.5;
+
             let beginFormatted = formatTtmlTimestamp(cur.time);
             let endFormatted = formatTtmlTimestamp(nextTime);
             
             let words = cur.text.split(/\s+/).filter(w => w);
+            let wordWeights = words.map(w => Math.max(1, w.replace(/[^a-zA-Z0-9]/g, '').length));
+            let totalWeight = wordWeights.reduce((sum, w) => sum + w, 0);
+
+            let currentWordOffset = cur.time;
             let wordNodeString = words.map((w, idx) => {
-                let wTimeOffset = parseFloat(cur.time) + (idx * 0.22);
-                return `<span begin="${formatTtmlTimestamp(wTimeOffset)}">${escapeXML(w)}</span>`;
+                let proportion = wordWeights[idx] / totalWeight;
+                let wDuration = lineDuration * proportion;
+                let formattedWordTime = formatTtmlTimestamp(currentWordOffset);
+                currentWordOffset += wDuration;
+                return `<span begin="${formattedWordTime}">${escapeXML(w)}</span>`;
             }).join(' ');
 
             linesArray.push(`      <p begin="${beginFormatted}" end="${endFormatted}">${wordNodeString}</p>`);
@@ -497,7 +505,20 @@ function convertPlainToTtml(plainText, artist, title, syncedSource = "") {
         linesArray = plainLines.map((l, index) => {
             let startSec = index * 3.5;
             let endSec = startSec + 3.5;
-            return `      <p begin="${formatTtmlTimestamp(startSec)}" end="${formatTtmlTimestamp(endSec)}">${escapeXML(l)}</p>`;
+            let words = l.split(/\s+/).filter(w => w);
+            let wordWeights = words.map(w => Math.max(1, w.replace(/[^a-zA-Z0-9]/g, '').length));
+            let totalWeight = wordWeights.reduce((sum, w) => sum + w, 0);
+
+            let currentWordOffset = startSec;
+            let wordNodeString = words.map((w, idx) => {
+                let proportion = wordWeights[idx] / totalWeight;
+                let wDuration = 3.5 * proportion;
+                let formattedWordTime = formatTtmlTimestamp(currentWordOffset);
+                currentWordOffset += wDuration;
+                return `<span begin="${formattedWordTime}">${escapeXML(w)}</span>`;
+            }).join(' ');
+
+            return `      <p begin="${formatTtmlTimestamp(startSec)}" end="${formatTtmlTimestamp(endSec)}">${wordNodeString}</p>`;
         });
     }
 
@@ -547,7 +568,6 @@ function updateDisplayedLyricsFormat(format) {
         outputText = convertPlainToTtml(sourceText, lyricsArtistTag.textContent, lyricsTitle.textContent, currentSyncedLyrics);
     }
 
-    // Clean decoded text output assignment
     lyricsContent.textContent = decodeHtmlEntities(outputText);
     if (immersiveView && !immersiveView.classList.contains('hidden')) {
         immersiveLyricsContent.textContent = decodeHtmlEntities(outputText);
