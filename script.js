@@ -1,9 +1,13 @@
 // ==========================================
-// LyricSpot - Main Application Script (Apple-Synced Engine v4.7 - Direct Apple Music ELRC/TTML Provider Parser)
+// LyricSpot - Main Application Script (Apple-Synced Engine v4.8 - Live Format Refresh & Direct Provider Bridge)
 // ==========================================
 
 let activeAudioElement = null;
 let currentPlayingTrackId = null;
+
+let currentActiveArtist = "";
+let currentActiveTitle = "";
+let currentActiveDurationMs = 0;
 
 let currentRawPlainLyrics = "";
 let currentSyncedLyrics = "";
@@ -335,18 +339,28 @@ function cleanTitleForQuery(title) {
         .trim();
 }
 
-// --- Dedicated Apple Music & LRCLIB Dual Source Provider Engine ---
+// --- Live-Refresh Apple Music & LRCLIB Dual Source Provider Engine ---
 async function getLyricsData(artist, title, durationMs = 0) {
     const cleanTitle = cleanTitleForQuery(title);
     const durationSec = durationMs ? Math.round(durationMs / 1000) : 0;
 
-    // Source Provider 1: Official Apple Music Direct Provider via Paxsenix / Open API Mirrors
+    // Live Source Provider Bridge: Apple Music / Paxsenix Mirror Integration
     try {
-        const amRes = await fetch(`https://api.vagalume.com.br/search.php?art=${encodeURIComponent(artist)}&mus=${encodeURIComponent(cleanTitle)}`, { signal: AbortSignal.timeout(3000) });
-        // Handled via fallback bridge if standard mirror is queried
+        const paxRes = await fetch(`https://api.paxsenix.org/lyrics/applemusic?artist=${encodeURIComponent(artist)}&title=${encodeURIComponent(cleanTitle)}`, { signal: AbortSignal.timeout(3000) });
+        if (paxRes.ok) {
+            const paxData = await paxRes.json();
+            if (paxData && (paxData.syncedLyrics || paxData.lyricsfile || paxData.ttml)) {
+                return {
+                    plainLyrics: decodeHtmlEntities(paxData.plainLyrics || ""),
+                    syncedLyrics: decodeHtmlEntities(paxData.syncedLyrics || paxData.ttml || ""),
+                    lyricsFile: paxData.lyricsfile || paxData.structured || null,
+                    instrumental: paxData.instrumental || false
+                };
+            }
+        }
     } catch (e) {}
 
-    // Source Provider 2: LRCLIB Native Apple-Synced Mirror & lyricsfile repository lookup
+    // Official LRCLIB Live Provider Mirror & lyricsfile repository lookup
     try {
         const params = new URLSearchParams({ track_name: cleanTitle, artist_name: artist });
         if (durationSec) params.append('duration', durationSec);
@@ -367,14 +381,14 @@ async function getLyricsData(artist, title, durationMs = 0) {
                 return {
                     plainLyrics: decodeHtmlEntities(bestMatch.plainLyrics || ""),
                     syncedLyrics: decodeHtmlEntities(bestMatch.syncedLyrics || ""),
-                    lyricsFile: bestMatch.lyricsfile || null, // Native Apple Music Word-Synced YAML/JSON Payload
+                    lyricsFile: bestMatch.lyricsfile || null,
                     instrumental: bestMatch.instrumental || false
                 };
             }
         }
     } catch (e) {}
 
-    // Source Provider 3: Secondary Direct Get Lookup
+    // Fallback Direct Get Lookup
     try {
         const getRes = await fetch(`https://lrclib.net/api/get?artist_name=${encodeURIComponent(artist)}&track_name=${encodeURIComponent(cleanTitle)}`, {
             headers: { 'Lrclib-Client': 'LyricSpot iOS 26 (https://github.com/lyricspot/app)' },
@@ -403,17 +417,6 @@ function decodeHtmlEntities(text) {
     return txt.value;
 }
 
-function convertPlainToLrc(plainText) {
-    const lines = plainText.split('\n');
-    return lines.map((line, index) => {
-        const seconds = index * 3.5;
-        const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
-        const secs = String((seconds % 60).toFixed(3)).padStart(6, '0');
-        return `[${mins}:${secs}] ${line}`;
-    }).join('\n');
-}
-
-// --- Strict Non-Estimating Structured Parser for Apple Music Data ---
 function parseLyricsFileStructure(lyricsFile) {
     if (!lyricsFile) return null;
     try {
@@ -423,7 +426,6 @@ function parseLyricsFileStructure(lyricsFile) {
                 return JSON.parse(trimmed);
             }
             
-            // YAML Structured Parser for Apple Music Sync Schema
             const lines = trimmed.split('\n');
             let structuredRows = [];
             let currentLineObj = null;
@@ -443,8 +445,6 @@ function parseLyricsFileStructure(lyricsFile) {
                     if (currentLineObj) {
                         currentLineObj.text = row.substring(5).trim().replace(/^["']|["']$/g, '');
                     }
-                } else if (row.includes('word:') || row.includes('text:') || row.includes('start:')) {
-                    // Captures explicit word sub-nodes if provided natively
                 }
             }
             if (currentLineObj) {
@@ -459,11 +459,9 @@ function parseLyricsFileStructure(lyricsFile) {
     return null;
 }
 
-// --- 100% Accurate Real-Time ELRC Generator (No Estimations) ---
 function convertPlainToElrc(plainText, syncedLyricsSource = "", structuredFile = null) {
     const parsedStructured = parseLyricsFileStructure(structuredFile);
     
-    // 1. If real structured Apple Music payload exists, extract exact word indexes
     if (parsedStructured && parsedStructured.length > 0) {
         return parsedStructured.map(line => {
             const startSec = line.start !== undefined ? line.start : (line.time || 0);
@@ -487,18 +485,13 @@ function convertPlainToElrc(plainText, syncedLyricsSource = "", structuredFile =
         }).join('\n');
     }
 
-    // 2. If synced source already contains real angle bracket timestamps from Apple Music, return untouched
     if (syncedLyricsSource && syncedLyricsSource.includes('<') && syncedLyricsSource.includes('>')) {
         return syncedLyricsSource;
     }
 
-    // 3. Absolute fallback to line-synced LRC without faux-estimating word intervals
-    return syncedLyricsSource && syncedLyricsSource.includes('[') 
-        ? syncedLyricsSource 
-        : convertPlainToLrc(plainText);
+    return syncedLyricsSource && syncedLyricsSource.includes('[') ? syncedLyricsSource : plainText;
 }
 
-// --- 100% Accurate Apple Music TTML XML Engine (Strictly Real Nodes) ---
 function convertPlainToTtml(plainText, artist, title, syncedSource = "", structuredFile = null) {
     let linesArray = [];
     const parsedStructured = parseLyricsFileStructure(structuredFile);
@@ -525,7 +518,7 @@ function convertPlainToTtml(plainText, artist, title, syncedSource = "", structu
             return `      <p begin="${beginFormatted}" end="${endFormatted}">${wordNodeString}</p>`;
         });
     } else {
-        const sourceToParse = syncedSource && syncedSource.includes('[') ? syncedSource : convertPlainToLrc(plainText);
+        const sourceToParse = syncedSource && syncedSource.includes('[') ? syncedSource : plainText;
         let rawLines = sourceToParse.split('\n').map(l => l.trim()).filter(l => l);
         
         linesArray = rawLines.map((l, index) => {
@@ -573,20 +566,35 @@ function formatTtmlTimestamp(totalSeconds) {
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
 }
 
-function updateDisplayedLyricsFormat(format) {
+// --- Live-Refresh Format Switcher Trigger ---
+async function updateDisplayedLyricsFormat(format) {
     currentSelectedLyricFormat = format;
-    if (!currentRawPlainLyrics && !currentSyncedLyrics) return;
+    if (!currentActiveArtist || !currentActiveTitle) return;
+
+    lyricsContent.innerHTML = `<p class="placeholder-text">Fetching fresh Apple Music ${format.toUpperCase()} data...</p>`;
+    if (immersiveView && !immersiveView.classList.contains('hidden')) {
+        immersiveLyricsContent.innerHTML = `<p class="placeholder-text">Fetching fresh Apple Music ${format.toUpperCase()} data...</p>`;
+    }
+
+    // Force fetch fresh lyrics directly from Apple Music / Provider bridge when format option is tapped
+    const freshLyricData = await getLyricsData(currentActiveArtist, currentActiveTitle, currentActiveDurationMs);
+
+    if (freshLyricData) {
+        currentRawPlainLyrics = freshLyricData.plainLyrics || "";
+        currentSyncedLyrics = freshLyricData.syncedLyrics || "";
+        currentStructuredLyricsFile = freshLyricData.lyricsFile || null;
+    }
 
     let outputText = "";
     if (format === 'plain') {
         outputText = currentRawPlainLyrics || currentSyncedLyrics.replace(/\[\d{2}:\d{2}\.\d{2,3}\]/g, '').replace(/<\d{2}:\d{2}\.\d{2,3}>/g, '').trim();
     } else if (format === 'lrc') {
-        outputText = currentSyncedLyrics ? currentSyncedLyrics.replace(/<\d{2}:\d{2}\.\d{2,3}>/g, '') : convertPlainToLrc(currentRawPlainLyrics);
+        outputText = currentSyncedLyrics ? currentSyncedLyrics.replace(/<\d{2}:\d{2}\.\d{2,3}>/g, '') : currentRawPlainLyrics;
     } else if (format === 'elrc') {
         outputText = convertPlainToElrc(currentRawPlainLyrics, currentSyncedLyrics, currentStructuredLyricsFile);
     } else if (format === 'ttml') {
         const sourceText = currentRawPlainLyrics || currentSyncedLyrics.replace(/\[\d{2}:\d{2}\.\d{2,3}\]/g, '');
-        outputText = convertPlainToTtml(sourceText, lyricsArtistTag.textContent, lyricsTitle.textContent, currentSyncedLyrics, currentStructuredLyricsFile);
+        outputText = convertPlainToTtml(sourceText, currentActiveArtist, currentActiveTitle, currentSyncedLyrics, currentStructuredLyricsFile);
     }
 
     lyricsContent.textContent = decodeHtmlEntities(outputText);
@@ -871,6 +879,10 @@ function closeImmersiveFullScreen() {
 }
 
 async function fetchAndDisplayLyrics(artist, title, durationMs) {
+    currentActiveArtist = artist;
+    currentActiveTitle = title;
+    currentActiveDurationMs = durationMs;
+
     lyricsSection.classList.remove('hidden');
     lyricsSection.style.transform = 'translateX(40px)';
     lyricsSection.style.opacity = '0';
