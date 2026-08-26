@@ -17,6 +17,11 @@
     <main class="app-container">
         <!-- Header -->
         <header class="app-header">
+            <!-- LyricSpot-Ai Liquid Glass Container (Top Right Positioned as Circled) -->
+            <div id="lyricspot-ai-badge" class="lyricspot-ai-badge">
+                <span class="ai-pulse-dot"></span> LyricSpot-Ai
+            </div>
+            
             <div class="header-badge">
                 <span class="pulse-dot"></span> iOS Liquid Glass Engine
             </div>
@@ -131,6 +136,48 @@
         </section>
     </main>
 
+    <!-- LyricSpot-Ai Popup Sheet (iOS 26 Style from Bottom) -->
+    <div id="ai-popup-overlay" class="ai-popup-overlay hidden">
+        <div id="ai-popup-sheet" class="ai-popup-sheet">
+            <!-- Top Bar with Liquid "X" Button -->
+            <div class="ai-sheet-header">
+                <button id="ai-close-btn" class="ai-close-pill" title="Exit AI">
+                    <span class="ai-x-symbol">✕</span>
+                </button>
+                <div class="ai-sheet-title-group">
+                    <h3>LyricSpot-Ai Assistant</h3>
+                    <span class="ai-status-indicator">Online & Ready</span>
+                </div>
+                <div style="width: 38px;"></div> <!-- Spacer for balance -->
+            </div>
+
+            <!-- Chat Content Area -->
+            <div id="ai-chat-messages" class="ai-chat-messages">
+                <div class="ai-message-bubble ai-response">
+                    Hello! I'm your LyricSpot-Ai assistant. Ask me anything about song meanings, artist backgrounds, or lyrics!
+                </div>
+            </div>
+
+            <!-- Custom Bottom Communication Bar (Matching Dark Picture Reference) -->
+            <div class="ai-bottom-bar">
+                <!-- Left Icon Container -->
+                <button id="ai-add-btn" class="ai-icon-bubble" title="Add Attachment">
+                    <img src="assets/add.png" alt="Add" class="ai-custom-asset-icon">
+                </button>
+
+                <!-- Message Container (Placeholder: "Chat with LyricSpot-Ai", no right icons inside) -->
+                <div class="ai-message-input-container">
+                    <input type="text" id="ai-chat-input" placeholder="Chat with LyricSpot-Ai" autocomplete="off" spellcheck="false">
+                </div>
+
+                <!-- Microphone Button Container -->
+                <button id="ai-mic-btn" class="ai-icon-bubble" title="Voice Input">
+                    <img src="assets/mic.png" alt="Microphone" class="ai-custom-asset-icon">
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Full-Screen Immersive Lyrics View Overlay -->
     <div id="immersive-fullscreen-view" class="immersive-view hidden">
         <div class="immersive-hero">
@@ -149,7 +196,7 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                 </div>
 
-                <!-- Liquid Glass Container with Format Menu & Action Toolbar Group (Moved to Top Right Position) -->
+                <!-- Liquid Glass Container with Format Menu & Action Toolbar Group -->
                 <div class="immersive-header-right-group">
                     
                     <!-- Horizontal Liquid Glass Action Container (Copy & Download Toolbar) -->
