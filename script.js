@@ -1,5 +1,5 @@
 // ==========================================
-// LyricSpot - Main Application Script (Deezer & Musixmatch Precision Engine v5.2)
+// LyricSpot - Main Application Script (Real Apple Music Provider Engine v5.3)
 // ==========================================
 
 let activeAudioElement = null;
@@ -339,123 +339,66 @@ function cleanTitleForQuery(title) {
         .trim();
 }
 
-// --- True 100% Verified Deezer & Musixmatch Word-Level Provider Pipeline ---
-async function getLyricsData(artist, title, durationMs = 0) {
+// --- Real Apple Music Provider API Integration ---
+async function getLyricsData(artist, title, trackId = null) {
     const cleanTitle = cleanTitleForQuery(title);
-    const durationSec = durationMs ? Math.round(durationMs / 1000) : 0;
+    let resolvedTrackId = trackId;
 
-    let structuredRows = null;
     let plainTextResult = "";
     let syncedTextResult = "";
+    let structuredRows = null;
+    let rawTtmlResult = "";
 
-    // 1. Direct Deezer Track Search & AnSync / Synchronized Payload Extraction
     try {
-        const deezerSearchRes = await fetch(`https://api.deezer.com/search?q=artist:"${encodeURIComponent(artist)}" track:"${encodeURIComponent(cleanTitle)}"`, { signal: AbortSignal.timeout(3500) });
-        if (deezerSearchRes.ok) {
-            const deezerData = await deezerSearchRes.json();
-            if (deezerData && deezerData.data && deezerData.data.length > 0) {
-                const trackId = deezerData.data[0].id;
-                // Fetch official Deezer lyrics endpoint containing accurate synchronization flags
-                const deezerLyricsRes = await fetch(`https://api.deezer.com/track/${trackId}/lyrics`, { signal: AbortSignal.timeout(3500) });
-                if (deezerLyricsRes.ok) {
-                    const lyricJson = await deezerLyricsRes.json();
-                    if (lyricJson && lyricJson.synchronized_lyrics) {
-                        structuredRows = parseDeezerSynchronizedLyrics(lyricJson.synchronized_lyrics);
-                        syncedTextResult = lyricJson.synchronized_lyrics;
-                    }
-                    if (lyricJson && lyricJson.lyrics) {
-                        plainTextResult = lyricJson.lyrics;
-                    }
+        // If trackId isn't passed directly, query Apple Music Search endpoint to grab the exact native ID
+        if (!resolvedTrackId) {
+            const searchRes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(artist + " " + cleanTitle)}&entity=song&limit=1`, { signal: AbortSignal.timeout(3000) });
+            const searchData = await searchRes.json();
+            if (searchData.results && searchData.results.length > 0) {
+                resolvedTrackId = searchData.results[0].trackId;
+            }
+        }
+
+        // Query the Real Apple Music Lyrics Provider API endpoint using the formal track ID
+        if (resolvedTrackId) {
+            const providerRes = await fetch(`https://api.paxsenix.org/lyrics/applemusic?id=${resolvedTrackId}`, { signal: AbortSignal.timeout(4000) });
+            if (providerRes.ok) {
+                const providerData = await providerRes.json();
+                plainTextResult = decodeHtmlEntities(providerData.plainLyrics || "");
+                syncedTextResult = decodeHtmlEntities(providerData.syncedLyrics || "");
+                rawTtmlResult = providerData.ttml || "";
+                
+                if (providerData.lyricsfile || providerData.structured) {
+                    structuredRows = parseLyricsFileStructure(providerData.lyricsfile || providerData.structured);
+                } else if (rawTtmlResult) {
+                    structuredRows = parseTtmlToStructure(rawTtmlResult);
+                }
+            }
+        }
+
+        // Fallback query matching by artist and title string if ID lookup fails
+        if (!plainTextResult && !syncedTextResult) {
+            const fallbackRes = await fetch(`https://api.paxsenix.org/lyrics/applemusic?artist=${encodeURIComponent(artist)}&title=${encodeURIComponent(cleanTitle)}`, { signal: AbortSignal.timeout(4000) });
+            if (fallbackRes.ok) {
+                const fbData = await fallbackRes.json();
+                plainTextResult = decodeHtmlEntities(fbData.plainLyrics || "");
+                syncedTextResult = decodeHtmlEntities(fbData.syncedLyrics || "");
+                rawTtmlResult = fbData.ttml || "";
+                if (fbData.lyricsfile || fbData.structured) {
+                    structuredRows = parseLyricsFileStructure(fbData.lyricsfile || fbData.structured);
+                } else if (rawTtmlResult) {
+                    structuredRows = parseTtmlToStructure(rawTtmlResult);
                 }
             }
         }
     } catch (e) {}
-
-    // 2. Fallback to Musixmatch RichSync API (Direct Word-Level Timestamps) if Deezer sync is missing
-    if (!structuredRows || structuredRows.length === 0) {
-        try {
-            const mxRes = await fetch(`https://apic-desktop.musixmatch.com/ws/1.1/track.richsync.get?q_track=${encodeURIComponent(cleanTitle)}&q_artist=${encodeURIComponent(artist)}&track_duration=${durationSec}`, {
-                headers: { 'authority': 'apic-desktop.musixmatch.com', 'cookie': 'x-mxm-token-guid=' },
-                signal: AbortSignal.timeout(3500)
-            });
-            if (mxRes.ok) {
-                const mxJson = await mxRes.json();
-                const richSyncBody = mxJson?.message?.body?.richsync?.richsync_body;
-                if (richSyncBody) {
-                    structuredRows = parseMusixmatchRichSync(richSyncBody);
-                }
-            }
-        } catch (e) {}
-    }
-
-    // 3. Fallback to Paxsenix / LRCLIB exact sync files if needed
-    if (!structuredRows || structuredRows.length === 0) {
-        try {
-            const paxRes = await fetch(`https://api.paxsenix.org/lyrics/applemusic?artist=${encodeURIComponent(artist)}&title=${encodeURIComponent(cleanTitle)}`, { signal: AbortSignal.timeout(3500) });
-            if (paxRes.ok) {
-                const paxData = await paxRes.json();
-                if (!plainTextResult) plainTextResult = decodeHtmlEntities(paxData.plainLyrics || "");
-                if (!syncedTextResult) syncedTextResult = decodeHtmlEntities(paxData.syncedLyrics || paxData.ttml || "");
-                if (paxData.lyricsfile || paxData.structured) {
-                    structuredRows = parseLyricsFileStructure(paxData.lyricsfile || paxData.structured);
-                }
-            }
-        } catch (e) {}
-    }
 
     return {
         plainLyrics: plainTextResult,
         syncedLyrics: syncedTextResult,
-        lyricsFile: structuredRows,
-        instrumental: false
+        ttml: rawTtmlResult,
+        lyricsFile: structuredRows
     };
-}
-
-function parseDeezerSynchronizedLyrics(syncPayload) {
-    try {
-        let parsed = typeof syncPayload === 'string' ? JSON.parse(syncPayload) : syncPayload;
-        let linesList = parsed.lines || parsed;
-        if (Array.isArray(linesList)) {
-            return linesList.map(row => {
-                let startSec = (row.milliseconds ? parseInt(row.milliseconds, 10) / 1000 : (row.ts || 0));
-                return {
-                    start: startSec,
-                    end: startSec + 4.0,
-                    text: row.line || row.c || "",
-                    words: Array.isArray(row.syllables || row.l) ? (row.syllables || row.l).map(w => ({
-                        start: w.milliseconds ? parseInt(w.milliseconds, 10) / 1000 : (w.ts || startSec),
-                        text: w.text || w.c || ""
-                    })) : []
-                };
-            });
-        }
-    } catch (e) {}
-    return null;
-}
-
-function parseMusixmatchRichSync(richSyncBody) {
-    try {
-        let parsed = typeof richSyncBody === 'string' ? JSON.parse(richSyncBody) : richSyncBody;
-        if (Array.isArray(parsed)) {
-            return parsed.map(row => ({
-                start: row.ts || 0,
-                end: row.te || (row.ts || 0) + 3.0,
-                text: row.c || "",
-                words: Array.isArray(row.l) ? row.l.map(w => ({
-                    start: w.ts || 0,
-                    text: w.c || ""
-                })) : []
-            }));
-        }
-    } catch (e) {}
-    return null;
-}
-
-function decodeHtmlEntities(text) {
-    if (!text) return "";
-    const txt = document.createElement('textarea');
-    txt.innerHTML = text;
-    return txt.value;
 }
 
 function parseLyricsFileStructure(lyricsFile) {
@@ -473,11 +416,69 @@ function parseLyricsFileStructure(lyricsFile) {
     return null;
 }
 
-// --- True Non-Estimated ELRC (Enhanced LRC) Generator Engine ---
+function parseTtmlToStructure(ttmlString) {
+    try {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(ttmlString, "text/xml");
+        const pNodes = xmlDoc.getElementsByTagName("p");
+        let structuredLines = [];
+
+        for (let i = 0; i < pNodes.length; i++) {
+            const p = pNodes[i];
+            const begin = p.getAttribute("begin");
+            const end = p.getAttribute("end");
+            const startSec = begin ? parseTtmlTimestampToSeconds(begin) : 0;
+            const endSec = end ? parseTtmlTimestampToSeconds(end) : startSec + 4.0;
+
+            let wordsList = [];
+            const spanNodes = p.getElementsByTagName("span");
+            
+            if (spanNodes.length > 0) {
+                for (let j = 0; j < spanNodes.length; j++) {
+                    const span = spanNodes[j];
+                    const spanBegin = span.getAttribute("begin");
+                    wordsList.push({
+                        start: spanBegin ? parseTtmlTimestampToSeconds(spanBegin) : startSec,
+                        text: span.textContent || ""
+                    });
+                }
+            }
+
+            structuredLines.push({
+                start: startSec,
+                end: endSec,
+                text: p.textContent || "",
+                words: wordsList
+            });
+        }
+        return structuredLines.length > 0 ? structuredLines : null;
+    } catch (e) {}
+    return null;
+}
+
+function parseTtmlTimestampToSeconds(tsString) {
+    if (!tsString) return 0;
+    if (tsString.includes(':')) {
+        const parts = tsString.split(':');
+        const m = parseFloat(parts[0]) || 0;
+        const s = parseFloat(parts[1]) || 0;
+        return (m * 60) + s;
+    }
+    return parseFloat(tsString) || 0;
+}
+
+function decodeHtmlEntities(text) {
+    if (!text) return "";
+    const txt = document.createElement('textarea');
+    txt.innerHTML = text;
+    return txt.value;
+}
+
+// --- Strict ELRC Formatter (Unscattered) ---
 function convertPlainToElrc(plainText, syncedLyricsSource = "", structuredFile = null) {
     if (structuredFile && Array.isArray(structuredFile) && structuredFile.length > 0) {
         return structuredFile.map(line => {
-            const startSec = line.start !== undefined ? line.start : (line.time || 0);
+            const startSec = line.start !== undefined ? line.start : 0;
             let mins = String(Math.floor(startSec / 60)).padStart(2, '0');
             let secs = Math.floor(startSec % 60);
             let ms = Math.round((startSec % 1) * 1000);
@@ -489,25 +490,27 @@ function convertPlainToElrc(plainText, syncedLyricsSource = "", structuredFile =
                     let wm = String(Math.floor(wStart / 60)).padStart(2, '0');
                     let ws = Math.floor(wStart % 60);
                     let wms = Math.round((wStart % 1) * 1000);
-                    let wordText = w.text || w.word || w.content || "";
-                    return `<${wm}:${String(ws).padStart(2, '0')}.${String(wms).padStart(3, '0')}>${wordText}`;
+                    return `<${wm}:${String(ws).padStart(2, '0')}.${String(wms).padStart(3, '0')}>${w.text || ""}`;
                 }).join(' ');
                 return `${lineTag} ${wordChunks}`;
             }
-            return `${lineTag} ${line.text || line.content || ""}`;
+            return `${lineTag} ${line.text || ""}`;
         }).join('\n');
     }
 
     return syncedLyricsSource || plainText;
 }
 
-// --- True Non-Estimated Apple Music TTML Generator Engine ---
-function convertPlainToTtml(plainText, artist, title, syncedSource = "", structuredFile = null) {
-    let linesArray = [];
+// --- Strict TTML Formatter (Unscattered) ---
+function convertPlainToTtml(plainText, artist, title, rawTtml = "", structuredFile = null) {
+    if (rawTtml && rawTtml.includes('<?xml')) {
+        return rawTtml;
+    }
 
+    let linesArray = [];
     if (structuredFile && Array.isArray(structuredFile) && structuredFile.length > 0) {
         linesArray = structuredFile.map((cur, i) => {
-            const startSec = cur.start !== undefined ? cur.start : (cur.time || (i * 3.5));
+            const startSec = cur.start !== undefined ? cur.start : (i * 3.5);
             const endSec = cur.end !== undefined ? cur.end : startSec + 4.0;
             
             let beginFormatted = formatTtmlTimestamp(startSec);
@@ -517,29 +520,19 @@ function convertPlainToTtml(plainText, artist, title, syncedSource = "", structu
             if (cur.words && Array.isArray(cur.words) && cur.words.length > 0) {
                 wordNodeString = cur.words.map(w => {
                     let wStart = w.start !== undefined ? w.start : startSec;
-                    let wTime = formatTtmlTimestamp(wStart);
-                    return `<span begin="${wTime}">${escapeXML(w.text || w.word || w.content || "")}</span>`;
+                    return `<span begin="${formatTtmlTimestamp(wStart)}">${escapeXML(w.text || "")}</span>`;
                 }).join(' ');
             } else {
-                const textContent = cur.text || cur.content || "";
-                wordNodeString = `<span>${escapeXML(textContent)}</span>`;
+                wordNodeString = `<span>${escapeXML(cur.text || "")}</span>`;
             }
             return `      <p begin="${beginFormatted}" end="${endFormatted}">${wordNodeString}</p>`;
         });
     } else {
-        let rawLines = (syncedSource || plainText).split('\n').map(l => l.trim()).filter(l => l);
+        let rawLines = plainText.split('\n').map(l => l.trim()).filter(l => l);
         linesArray = rawLines.map((l, index) => {
-            let match = l.match(/\[(\d{2}:\d{2}\.\d{2,3})\]\s*(.*)/);
             let startSec = index * 3.5;
-            let text = l;
-            if (match) {
-                let [m, rest] = match[1].split(':');
-                let [s, ms] = rest.split('.');
-                startSec = (parseInt(m, 10) * 60) + parseInt(s, 10) + (parseInt((ms || "0").padEnd(3, '0'), 10) / 1000);
-                text = match[2];
-            }
             let endSec = startSec + 4.0;
-            return `      <p begin="${formatTtmlTimestamp(startSec)}" end="${formatTtmlTimestamp(endSec)}"><span>${escapeXML(text)}</span></p>`;
+            return `      <p begin="${formatTtmlTimestamp(startSec)}" end="${formatTtmlTimestamp(endSec)}"><span>${escapeXML(l)}</span></p>`;
         });
     }
 
@@ -578,12 +571,12 @@ async function updateDisplayedLyricsFormat(format) {
     currentSelectedLyricFormat = format;
     if (!currentActiveArtist || !currentActiveTitle) return;
 
-    lyricsContent.innerHTML = `<p class="placeholder-text">Rendering exact ${format.toUpperCase()} format...</p>`;
+    lyricsContent.innerHTML = `<p class="placeholder-text">Formatting ${format.toUpperCase()}...</p>`;
     if (immersiveView && !immersiveView.classList.contains('hidden')) {
-        immersiveLyricsContent.innerHTML = `<p class="placeholder-text">Rendering exact ${format.toUpperCase()} format...</p>`;
+        immersiveLyricsContent.innerHTML = `<p class="placeholder-text">Formatting ${format.toUpperCase()}...</p>`;
     }
 
-    const freshLyricData = await getLyricsData(currentActiveArtist, currentActiveTitle, currentActiveDurationMs);
+    const freshLyricData = await getLyricsData(currentActiveArtist, currentActiveTitle, currentActiveTrackData?.trackId);
 
     if (freshLyricData) {
         currentRawPlainLyrics = freshLyricData.plainLyrics || "";
@@ -600,7 +593,7 @@ async function updateDisplayedLyricsFormat(format) {
         outputText = convertPlainToElrc(currentRawPlainLyrics, currentSyncedLyrics, currentStructuredLyricsFile);
     } else if (format === 'ttml') {
         const sourceText = currentRawPlainLyrics || currentSyncedLyrics.replace(/\[\d{2}:\d{2}\.\d{2,3}\]/g, '');
-        outputText = convertPlainToTtml(sourceText, currentActiveArtist, currentActiveTitle, currentSyncedLyrics, currentStructuredLyricsFile);
+        outputText = convertPlainToTtml(sourceText, currentActiveArtist, currentActiveTitle, freshLyricData.ttml, currentStructuredLyricsFile);
     }
 
     lyricsContent.textContent = decodeHtmlEntities(outputText);
@@ -734,12 +727,12 @@ function renderSongList(tracks) {
             toggleTrackPlayback(track, playBtnImg);
         });
 
-        getLyricsData(track.artistName, track.trackName, track.trackTimeMillis).then(lyricData => {
+        getLyricsData(track.artistName, track.trackName, track.trackId).then(lyricData => {
             const dot = document.getElementById(`dot-${index}`);
             if (dot) {
-                if (lyricData && (lyricData.syncedLyrics || (lyricData.lyricsFile && lyricData.lyricsFile.length > 0))) {
+                if (lyricData && (lyricData.syncedLyrics || lyricData.ttml || (lyricData.lyricsFile && lyricData.lyricsFile.length > 0))) {
                     dot.classList.add('available');
-                    dot.title = "Deezer verified word-level synchronized lyrics available";
+                    dot.title = "Real Apple Music synchronized lyrics available";
                 } else {
                     dot.classList.add('unavailable');
                     dot.title = "Synced lyrics unavailable";
@@ -757,7 +750,7 @@ function renderSongList(tracks) {
                 resultsSection.classList.add('hidden');
                 resultsSection.style.transform = '';
                 resultsSection.style.opacity = '';
-                fetchAndDisplayLyrics(track.artistName, track.trackName, track.trackTimeMillis);
+                fetchAndDisplayLyrics(track.artistName, track.trackName, track.trackId);
             }, 250);
         });
 
@@ -851,10 +844,9 @@ function closeImmersiveFullScreen() {
     document.body.style.overflow = '';
 }
 
-async function fetchAndDisplayLyrics(artist, title, durationMs) {
+async function fetchAndDisplayLyrics(artist, title, trackId) {
     currentActiveArtist = artist;
     currentActiveTitle = title;
-    currentActiveDurationMs = durationMs;
 
     lyricsSection.classList.remove('hidden');
     lyricsSection.style.transform = 'translateX(40px)';
@@ -870,11 +862,11 @@ async function fetchAndDisplayLyrics(artist, title, durationMs) {
     fullscreenLyricsBtn.textContent = "See full lyrics...";
     lyricsTitle.textContent = title;
     lyricsArtistTag.textContent = artist;
-    lyricsContent.innerHTML = `<p class="placeholder-text">Fetching verified word-by-word timestamps from Deezer...</p>`;
+    lyricsContent.innerHTML = `<p class="placeholder-text">Fetching from Real Apple Music Provider API...</p>`;
 
-    const lyricData = await getLyricsData(artist, title, durationMs);
+    const lyricData = await getLyricsData(artist, title, trackId);
 
-    if (lyricData && (lyricData.plainLyrics || lyricData.syncedLyrics || (lyricData.lyricsFile && lyricData.lyricsFile.length > 0))) {
+    if (lyricData && (lyricData.plainLyrics || lyricData.syncedLyrics || lyricData.ttml || (lyricData.lyricsFile && lyricData.lyricsFile.length > 0))) {
         currentRawPlainLyrics = lyricData.plainLyrics || "";
         currentSyncedLyrics = lyricData.syncedLyrics || "";
         currentStructuredLyricsFile = lyricData.lyricsFile || null;
@@ -897,7 +889,7 @@ async function fetchAndDisplayLyrics(artist, title, durationMs) {
         currentRawPlainLyrics = "";
         currentSyncedLyrics = "";
         currentStructuredLyricsFile = null;
-        lyricsContent.innerHTML = `<p class="placeholder-text">No structured sync data found for <b>${title}</b>.</p>`;
+        lyricsContent.innerHTML = `<p class="placeholder-text">No lyrics found for <b>${title}</b> on Apple Music.</p>`;
     }
 }
 
