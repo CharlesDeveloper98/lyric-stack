@@ -1,5 +1,5 @@
 // ==========================================
-// LyricSpot - Main Application Script (Real Apple Music Provider Engine v5.3)
+// LyricSpot - Main Application Script (Resilient Multi-Mirror Apple Music Engine v5.4)
 // ==========================================
 
 let activeAudioElement = null;
@@ -339,7 +339,7 @@ function cleanTitleForQuery(title) {
         .trim();
 }
 
-// --- Real Apple Music Provider API Integration ---
+// --- Resilient Multi-Mirror Apple Music Provider API Integration ---
 async function getLyricsData(artist, title, trackId = null) {
     const cleanTitle = cleanTitleForQuery(title);
     let resolvedTrackId = trackId;
@@ -350,7 +350,6 @@ async function getLyricsData(artist, title, trackId = null) {
     let rawTtmlResult = "";
 
     try {
-        // If trackId isn't passed directly, query Apple Music Search endpoint to grab the exact native ID
         if (!resolvedTrackId) {
             const searchRes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(artist + " " + cleanTitle)}&entity=song&limit=1`, { signal: AbortSignal.timeout(3000) });
             const searchData = await searchRes.json();
@@ -359,36 +358,40 @@ async function getLyricsData(artist, title, trackId = null) {
             }
         }
 
-        // Query the Real Apple Music Lyrics Provider API endpoint using the formal track ID
-        if (resolvedTrackId) {
-            const providerRes = await fetch(`https://api.paxsenix.org/lyrics/applemusic?id=${resolvedTrackId}`, { signal: AbortSignal.timeout(4000) });
-            if (providerRes.ok) {
-                const providerData = await providerRes.json();
-                plainTextResult = decodeHtmlEntities(providerData.plainLyrics || "");
-                syncedTextResult = decodeHtmlEntities(providerData.syncedLyrics || "");
-                rawTtmlResult = providerData.ttml || "";
-                
-                if (providerData.lyricsfile || providerData.structured) {
-                    structuredRows = parseLyricsFileStructure(providerData.lyricsfile || providerData.structured);
-                } else if (rawTtmlResult) {
-                    structuredRows = parseTtmlToStructure(rawTtmlResult);
-                }
-            }
-        }
+        const providerMirrors = [
+            `https://api.paxsenix.org/lyrics/applemusic?id=${resolvedTrackId}`,
+            `https://lrclib.net/api/get?artist_name=${encodeURIComponent(artist)}&track_name=${encodeURIComponent(cleanTitle)}`
+        ];
 
-        // Fallback query matching by artist and title string if ID lookup fails
-        if (!plainTextResult && !syncedTextResult) {
-            const fallbackRes = await fetch(`https://api.paxsenix.org/lyrics/applemusic?artist=${encodeURIComponent(artist)}&title=${encodeURIComponent(cleanTitle)}`, { signal: AbortSignal.timeout(4000) });
-            if (fallbackRes.ok) {
-                const fbData = await fallbackRes.json();
-                plainTextResult = decodeHtmlEntities(fbData.plainLyrics || "");
-                syncedTextResult = decodeHtmlEntities(fbData.syncedLyrics || "");
-                rawTtmlResult = fbData.ttml || "";
-                if (fbData.lyricsfile || fbData.structured) {
-                    structuredRows = parseLyricsFileStructure(fbData.lyricsfile || fbData.structured);
-                } else if (rawTtmlResult) {
-                    structuredRows = parseTtmlToStructure(rawTtmlResult);
+        for (const endpoint of providerMirrors) {
+            try {
+                const providerRes = await fetch(endpoint, { signal: AbortSignal.timeout(4000) });
+                if (providerRes.ok) {
+                    const providerData = await providerRes.json();
+                    
+                    if (endpoint.includes('lrclib.net')) {
+                        plainTextResult = decodeHtmlEntities(providerData.plainLyrics || "");
+                        syncedTextResult = decodeHtmlEntities(providerData.syncedLyrics || "");
+                        if (syncedTextResult) {
+                            structuredRows = parseLrcToStructure(syncedTextResult);
+                        }
+                        break;
+                    } 
+                    
+                    plainTextResult = decodeHtmlEntities(providerData.plainLyrics || "");
+                    syncedTextResult = decodeHtmlEntities(providerData.syncedLyrics || "");
+                    rawTtmlResult = providerData.ttml || "";
+                    
+                    if (providerData.lyricsfile || providerData.structured) {
+                        structuredRows = parseLyricsFileStructure(providerData.lyricsfile || providerData.structured);
+                    } else if (rawTtmlResult) {
+                        structuredRows = parseTtmlToStructure(rawTtmlResult);
+                    }
+
+                    if (plainTextResult || syncedTextResult || rawTtmlResult) break;
                 }
+            } catch (err) {
+                continue; 
             }
         }
     } catch (e) {}
@@ -399,6 +402,32 @@ async function getLyricsData(artist, title, trackId = null) {
         ttml: rawTtmlResult,
         lyricsFile: structuredRows
     };
+}
+
+function parseLrcToStructure(lrcString) {
+    if (!lrcString) return null;
+    const lines = lrcString.split('\n');
+    let rows = [];
+    const timeReg = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/;
+
+    for (let line of lines) {
+        const match = timeReg.exec(line);
+        if (match) {
+            const mins = parseInt(match[1], 10);
+            const secs = parseInt(match[2], 10);
+            const millis = parseInt(match[3], 10);
+            const totalSec = (mins * 60) + secs + (millis < 100 ? millis / 10 : millis / 1000);
+            const textContent = line.replace(timeReg, '').trim();
+            
+            rows.push({
+                start: totalSec,
+                end: totalSec + 4.0,
+                text: textContent,
+                words: []
+            });
+        }
+    }
+    return rows.length > 0 ? rows : null;
 }
 
 function parseLyricsFileStructure(lyricsFile) {
@@ -474,7 +503,6 @@ function decodeHtmlEntities(text) {
     return txt.value;
 }
 
-// --- Strict ELRC Formatter (Unscattered) ---
 function convertPlainToElrc(plainText, syncedLyricsSource = "", structuredFile = null) {
     if (structuredFile && Array.isArray(structuredFile) && structuredFile.length > 0) {
         return structuredFile.map(line => {
@@ -501,7 +529,6 @@ function convertPlainToElrc(plainText, syncedLyricsSource = "", structuredFile =
     return syncedLyricsSource || plainText;
 }
 
-// --- Strict TTML Formatter (Unscattered) ---
 function convertPlainToTtml(plainText, artist, title, rawTtml = "", structuredFile = null) {
     if (rawTtml && rawTtml.includes('<?xml')) {
         return rawTtml;
@@ -566,7 +593,6 @@ function formatTtmlTimestamp(totalSeconds) {
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
 }
 
-// --- Live Format Switcher Trigger ---
 async function updateDisplayedLyricsFormat(format) {
     currentSelectedLyricFormat = format;
     if (!currentActiveArtist || !currentActiveTitle) return;
@@ -732,7 +758,7 @@ function renderSongList(tracks) {
             if (dot) {
                 if (lyricData && (lyricData.syncedLyrics || lyricData.ttml || (lyricData.lyricsFile && lyricData.lyricsFile.length > 0))) {
                     dot.classList.add('available');
-                    dot.title = "Real Apple Music synchronized lyrics available";
+                    dot.title = "Synchronized lyrics available";
                 } else {
                     dot.classList.add('unavailable');
                     dot.title = "Synced lyrics unavailable";
@@ -862,7 +888,7 @@ async function fetchAndDisplayLyrics(artist, title, trackId) {
     fullscreenLyricsBtn.textContent = "See full lyrics...";
     lyricsTitle.textContent = title;
     lyricsArtistTag.textContent = artist;
-    lyricsContent.innerHTML = `<p class="placeholder-text">Fetching from Real Apple Music Provider API...</p>`;
+    lyricsContent.innerHTML = `<p class="placeholder-text">Fetching from lyrics provider API...</p>`;
 
     const lyricData = await getLyricsData(artist, title, trackId);
 
@@ -889,7 +915,7 @@ async function fetchAndDisplayLyrics(artist, title, trackId) {
         currentRawPlainLyrics = "";
         currentSyncedLyrics = "";
         currentStructuredLyricsFile = null;
-        lyricsContent.innerHTML = `<p class="placeholder-text">No lyrics found for <b>${title}</b> on Apple Music.</p>`;
+        lyricsContent.innerHTML = `<p class="placeholder-text">No lyrics found for <b>${title}</b>.</p>`;
     }
 }
 
