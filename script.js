@@ -91,6 +91,9 @@ const views = {
     settings: document.getElementById('settings-view')
 };
 const headerSubtitle = document.getElementById('header-subtitle');
+const lyricspotAiBtn = document.getElementById('lyricspot-ai-btn');
+const aiModalOverlay = document.getElementById('ai-modal-overlay');
+const aiModalCloseBtn = document.getElementById('ai-modal-close-btn');
 
 const floatingTabBar = document.getElementById('floating-tab-bar');
 const tabHome = document.getElementById('tab-home');
@@ -122,6 +125,30 @@ const immersivePlayIcon = document.getElementById('immersive-play-icon');
 const formatTriggerBtn = document.getElementById('immersive-format-trigger');
 const formatDropdown = document.getElementById('immersive-format-dropdown');
 const formatOptions = document.querySelectorAll('.format-option');
+
+// --- LyricSpot-Ai Modal Controls ---
+if (lyricspotAiBtn && aiModalOverlay) {
+    lyricspotAiBtn.addEventListener('click', () => {
+        aiModalOverlay.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    });
+}
+
+if (aiModalCloseBtn && aiModalOverlay) {
+    aiModalCloseBtn.addEventListener('click', () => {
+        aiModalOverlay.classList.add('hidden');
+        document.body.style.overflow = '';
+    });
+}
+
+if (aiModalOverlay) {
+    aiModalOverlay.addEventListener('click', (e) => {
+        if (e.target === aiModalOverlay) {
+            aiModalOverlay.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+    });
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     const copyBtn = document.getElementById('immersive-copy-btn');
@@ -243,12 +270,15 @@ function switchView(targetView) {
         tabHome.classList.add('active');
         tabSettings.classList.remove('active');
         headerSubtitle.textContent = "Welcome to your personal music lyric hub";
+        if (lyricspotAiBtn) lyricspotAiBtn.classList.remove('hidden'); // Show only on home
     } else if (targetView === 'settings') {
         tabSettings.classList.add('active');
         tabHome.classList.remove('active');
         headerSubtitle.textContent = "Customize your Liquid Glass experience";
+        if (lyricspotAiBtn) lyricspotAiBtn.classList.add('hidden'); // Hide on other views
     } else if (targetView === 'search') {
         headerSubtitle.textContent = "Query global music catalogs instantly";
+        if (lyricspotAiBtn) lyricspotAiBtn.classList.add('hidden'); // Hide on other views
     }
 
     Object.keys(views).forEach(key => {
@@ -347,7 +377,6 @@ async function getLyricsData(artist, title, durationMs = 0) {
         instrumental: false
     };
 
-    // 1. Fetch Standard LRC & Structured Payload from LRCLIB / Online Mirror Providers
     try {
         const params = new URLSearchParams({ track_name: cleanTitle, artist_name: artist });
         if (durationSec) params.append('duration', durationSec);
@@ -372,7 +401,6 @@ async function getLyricsData(artist, title, durationMs = 0) {
         }
     } catch (e) {}
 
-    // 2. Fallback Direct GET lookup if search yields partial data
     if (!payloadResult.syncedLyrics && !payloadResult.lyricsFile) {
         try {
             const getRes = await fetch(`https://lrclib.net/api/get?artist_name=${encodeURIComponent(artist)}&track_name=${encodeURIComponent(cleanTitle)}`, {
@@ -438,7 +466,6 @@ function parseLyricsFileStructure(lyricsFile) {
     return null;
 }
 
-// --- Isolated & Advanced ELRC Engine (Word-Synced) ---
 function generateEnhancedElrc(plainText, syncedLyricsSource = "", structuredFile = null) {
     const parsedStructured = parseLyricsFileStructure(structuredFile);
     if (parsedStructured && parsedStructured.length > 0) {
@@ -463,7 +490,6 @@ function generateEnhancedElrc(plainText, syncedLyricsSource = "", structuredFile
         }).join('\n');
     }
 
-    // Advanced dynamic parsing from standard synced LRC to structured word intervals
     const sourceToParse = syncedLyricsSource && syncedLyricsSource.includes('[') 
         ? syncedLyricsSource 
         : convertPlainToLrc(plainText);
@@ -487,7 +513,7 @@ function generateEnhancedElrc(plainText, syncedLyricsSource = "", structuredFile
                 continue;
             }
 
-            let wordIntervalMs = 280; // High precision interval calculation per syllable/word chunk
+            let wordIntervalMs = 280;
             let constructedLine = `[${timeStr}]`;
             let accumulatedMs = totalMs;
 
@@ -507,7 +533,6 @@ function generateEnhancedElrc(plainText, syncedLyricsSource = "", structuredFile
     return formattedLines.join('\n');
 }
 
-// --- Isolated & Advanced Apple Music TTML XML Engine ---
 function generateAppleMusicTtml(plainText, artist, title, syncedSource = "", structuredFile = null) {
     let linesArray = [];
     const parsedStructured = parseLyricsFileStructure(structuredFile);
@@ -600,7 +625,6 @@ function formatTtmlTimestamp(totalSeconds) {
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
 }
 
-// --- Dynamic Format Renderer Routing ---
 function updateDisplayedLyricsFormat(format) {
     currentSelectedLyricFormat = format;
     if (!currentRawPlainLyrics && !currentSyncedLyrics) return;
@@ -609,13 +633,10 @@ function updateDisplayedLyricsFormat(format) {
     if (format === 'plain') {
         outputText = currentRawPlainLyrics || currentSyncedLyrics.replace(/\[\d{2}:\d{2}\.\d{2,3}\]/g, '').trim();
     } else if (format === 'lrc') {
-        // Isolated Standard Line-Synced LRC Source
         outputText = currentSyncedLyrics ? currentSyncedLyrics : convertPlainToLrc(currentRawPlainLyrics);
     } else if (format === 'elrc') {
-        // Isolated Enhanced Word-Synced ELRC Source
         outputText = generateEnhancedElrc(currentRawPlainLyrics, currentSyncedLyrics, currentStructuredLyricsFile);
     } else if (format === 'ttml') {
-        // Isolated Apple Music TTML Source Engine
         const sourceText = currentRawPlainLyrics || currentSyncedLyrics.replace(/\[\d{2}:\d{2}\.\d{2,3}\]/g, '');
         outputText = generateAppleMusicTtml(sourceText, lyricsArtistTag.textContent, lyricsTitle.textContent, currentSyncedLyrics, currentStructuredLyricsFile);
     }
