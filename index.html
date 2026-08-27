@@ -148,12 +148,17 @@
                 <h2 class="ai-centered-title">LyricSpot-Ai</h2>
                 <div class="ai-header-spacer"></div>
             </div>
-            <div class="ai-modal-body">
+            <div class="ai-modal-body" id="ai-modal-body">
                 <div class="glass-card ai-welcome-card">
-                    <p>Welcome to <b>LyricSpot-Ai</b>. Ask questions about track meanings, find song recommendations, or analyze lyrical themes instantly using neural vectors.</p>
+                    <p>Welcome to <b>LyricSpot-Ai</b>. I am fully equipped with advanced neural music tools to assist you:</p>
+                    <ul class="ai-feature-list">
+                        <li><b>Multi-Language Translations:</b> Instantly translate any pasted lyrics into any requested language.</li>
+                        <li><b>Precise Format Generation:</b> Provide a track name and I will fetch or format accurate lyrics in Plain, LRC, ELRC, or TTML structures.</li>
+                        <li><b>Lyric Transliteration:</b> Add custom phonetic transliterations to any pasted lyrics instantly.</li>
+                    </ul>
                 </div>
-                <div class="ai-chat-simulator">
-                    <div class="ai-bubble">Hello! How can I assist you with your music library today?</div>
+                <div class="ai-chat-simulator" id="ai-chat-simulator">
+                    <div class="ai-bubble">Hello! How can I assist you with your music library today? Try giving me a track name or paste some lyrics!</div>
                 </div>
             </div>
             <div class="ai-modal-footer">
@@ -163,8 +168,8 @@
                 <div class="ai-input-pill">
                     <input type="text" placeholder="Message" id="ai-input-field" autocomplete="off">
                 </div>
-                <button class="ai-icon-btn ai-mic-btn" title="Voice Input">
-                    <img src="assets/mic.png" alt="Microphone" />
+                <button id="ai-action-btn" class="ai-icon-btn ai-mic-btn" title="Voice Input">
+                    <img id="ai-action-icon" src="assets/mic.png" alt="Microphone" />
                 </button>
             </div>
         </div>
